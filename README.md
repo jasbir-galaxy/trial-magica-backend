@@ -34,3 +34,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Browser connection
+
+Set `FRONTEND_ORIGIN=http://localhost:3000` in `.env.local` for local development.
+In Vercel Production, use `https://trial-magica-frontend.vercel.app` and redeploy.
+Origins must have no trailing slash. CORS is not authentication.
+`GET /api/health` supports configured-origin browser requests and originless health probes.
+`OPTIONS /api/health` permits GET with Authorization and Content-Type headers.
+
+The health contract is owned by `src/contracts/health.ts`. Export changes with:
+`node scripts/export-contracts.mjs "../Magica Frontend/src/generated"`.
+Commit the generated frontend file with its consuming change. Deployments do not need sibling checkouts.
+Run `pnpm test`, `pnpm typecheck`, and `pnpm lint` before publishing.
