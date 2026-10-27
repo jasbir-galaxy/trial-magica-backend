@@ -52,7 +52,11 @@ export async function requireSession(request: Request): Promise<{ userId: string
     const headers = new Headers(request.headers);
     headers.delete("cookie");
     stage = "token_verification";
-    const state = await client.authenticateRequest(new Request(request, { headers }), {
+    // Next.js can proxy Request in production. Native Request cloning accesses
+    // private fields on that proxy and throws. Auth needs metadata only: avoid
+    // cloning or consuming the original body, which belongs to the route handler.
+    const authRequest = new Request(request.url, { method: request.method, headers });
+    const state = await client.authenticateRequest(authRequest, {
       acceptsToken: "session_token",
       authorizedParties: [frontendOrigin],
     });

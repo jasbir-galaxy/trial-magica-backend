@@ -99,3 +99,20 @@ it.each([
   }));
   expect(JSON.stringify(log.mock.calls)).not.toMatch(/private-token|private-message/);
 });
+
+it("accepts a framework-proxied Request without accessing native private fields", async () => {
+  authenticateRequest.mockResolvedValue({ isAuthenticated: true, toAuth: () => ({ userId: "user_verified" }) });
+  const original = request("Bearer test-token");
+  original.headers.set("Cookie", "__session=private-cookie");
+  const wrapped = new Proxy(original, {
+    get: (target, property) => Reflect.get(target, property, target),
+  });
+  const response = await GET(wrapped);
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ userId: "user_verified" });
+  const forwarded = authenticateRequest.mock.calls[0][0] as Request;
+  expect(forwarded.url).toBe(original.url);
+  expect(forwarded.method).toBe("GET");
+  expect(forwarded.headers.get("Authorization")).toBe("Bearer test-token");
+  expect(forwarded.headers.has("Cookie")).toBe(false);
+});
