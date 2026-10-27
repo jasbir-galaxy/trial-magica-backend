@@ -9,9 +9,10 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-  "test:watch": "vitest"
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@clerk/backend": "3.26.2",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",

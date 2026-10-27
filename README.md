@@ -47,3 +47,22 @@ The health contract is owned by `src/contracts/health.ts`. Export changes with:
 `node scripts/export-contracts.mjs "../Magica Frontend/src/generated"`.
 Commit the generated frontend file with its consuming change. Deployments do not need sibling checkouts.
 Run `pnpm test`, `pnpm typecheck`, and `pnpm lint` before publishing.
+
+## Session authentication
+
+`GET /api/app/v1/me` accepts a Clerk session token in `Authorization: Bearer ...`.
+It returns `{ "userId": "user_..." }` from verified session claims only. No user records or passwords are stored here yet.
+Missing or rejected sessions return 401; unavailable verification returns 503. Responses are not cached.
+OPTIONS preflight is unauthenticated, and auth error responses retain CORS headers.
+
+Use the same Clerk application and instance as the frontend. In your host terminal:
+
+```bash
+npx -y clerk@latest link --app app_3LHpn5TyCbBEbkM3vrRXHeLfgSf
+npx -y clerk@latest env pull
+```
+
+The server requires `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY` (or `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`), and `FRONTEND_ORIGIN`.
+Do not commit actual keys. No Clerk init or UI provider is needed in this API-only project.
+For deployed testing, configure matching instance keys in each Vercel project and redeploy; Vercel's Production environment does not itself select a Clerk instance.
+Validate locally at the signed-in frontend's `/connection` page, then sign out and confirm no identity remains.
