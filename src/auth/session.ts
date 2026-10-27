@@ -1,4 +1,5 @@
 import { createClerkClient } from "@clerk/backend";
+import { TokenVerificationErrorReason } from "@clerk/backend/errors";
 import { z } from "zod";
 import { OriginSchema } from "../config/origin";
 
@@ -13,6 +14,8 @@ type SessionDiagnostic = {
   fields?: string[];
   stage?: "client_initialization" | "token_verification" | "identity_read";
   upstreamStatus?: number;
+  verificationReason?: string;
+  errorKind?: string;
 };
 
 export class SessionError extends Error {
@@ -62,8 +65,14 @@ export async function requireSession(request: Request): Promise<{ userId: string
     if (error instanceof SessionError) throw error;
     // Do not expose SDK exceptions, headers, cookies, or tokens in public errors.
     const status = typeof error === "object" && error !== null && "status" in error ? error.status : undefined;
+    const sdkReason = typeof error === "object" && error !== null && "reason" in error ? error.reason : undefined;
+    const verificationReason = typeof sdkReason === "string" && Object.values(TokenVerificationErrorReason).includes(sdkReason)
+      ? sdkReason : "unclassified";
+    const errorKind = error instanceof TypeError ? "TypeError"
+      : error instanceof RangeError ? "RangeError"
+      : error instanceof Error ? "Error" : "non_error_throw";
     throw new SessionError(503, {
-      reason: "verification_failed", stage,
+      reason: "verification_failed", stage, verificationReason, errorKind,
       ...(typeof status === "number" && Number.isInteger(status) && status >= 400 && status <= 599
         ? { upstreamStatus: status } : {}),
     });

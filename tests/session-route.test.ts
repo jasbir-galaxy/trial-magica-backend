@@ -85,3 +85,17 @@ it("logs verification stage and HTTP status without SDK error details", async ()
   }));
   expect(JSON.stringify(log.mock.calls)).not.toMatch(/private-secret|private-token/);
 });
+
+it.each([
+  ["secret-key-invalid", "secret-key-invalid"],
+  ["jwk-remote-failed-to-load", "jwk-remote-failed-to-load"],
+  ["private-token-in-reason", "unclassified"],
+])("logs only known SDK reasons: %s", async (reason, expected) => {
+  authenticateRequest.mockRejectedValue(Object.assign(new Error("private-message"), { reason }));
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  expect((await GET(request("Bearer private-token"))).status).toBe(503);
+  expect(log).toHaveBeenCalledWith("Authenticated request failed", expect.objectContaining({
+    verificationReason: expected, errorKind: "Error",
+  }));
+  expect(JSON.stringify(log.mock.calls)).not.toMatch(/private-token|private-message/);
+});
