@@ -62,3 +62,26 @@ it("does not accept cookies in place of bearer credentials", async () => {
   expect((await GET(req)).status).toBe(401);
   expect(authenticateRequest).not.toHaveBeenCalled();
 });
+
+it("identifies missing configuration without logging credentials", async () => {
+  vi.stubEnv("CLERK_SECRET_KEY", "");
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const response = await GET(request("Bearer private-token"));
+  expect(response.status).toBe(503);
+  expect(log).toHaveBeenCalledWith("Authenticated request failed", expect.objectContaining({
+    reason: "configuration_invalid", fields: ["CLERK_SECRET_KEY"],
+  }));
+  expect(JSON.stringify(log.mock.calls)).not.toContain("private-token");
+  expect(authenticateRequest).not.toHaveBeenCalled();
+  expect(await response.text()).not.toContain("CLERK_SECRET_KEY");
+});
+it("logs verification stage and HTTP status without SDK error details", async () => {
+  authenticateRequest.mockRejectedValue(Object.assign(new Error("private-secret"), { status: 401 }));
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  const response = await GET(request("Bearer private-token"));
+  expect(response.status).toBe(503);
+  expect(log).toHaveBeenCalledWith("Authenticated request failed", expect.objectContaining({
+    reason: "verification_failed", stage: "token_verification", upstreamStatus: 401,
+  }));
+  expect(JSON.stringify(log.mock.calls)).not.toMatch(/private-secret|private-token/);
+});
