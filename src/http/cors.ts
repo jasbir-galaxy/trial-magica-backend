@@ -1,21 +1,13 @@
-import { z } from "zod";
+import { OriginSchema } from "../config/origin";
 
-const OriginSchema = z.url().refine((value) => {
-  try {
-    const url = new URL(value);
-    return ["http:", "https:"].includes(url.protocol) && url.origin === value;
-  } catch {
-    return false;
-  }
-});
 const ALLOWED_HEADERS = ["authorization", "content-type"];
 
 // CORS controls browser access; protected routes still require authentication.
-export function withCors(
+export async function withCors(
   request: Request,
   methods: readonly string[],
-  handler: () => Response,
-): Response {
+  handler: () => Response | Promise<Response>,
+): Promise<Response> {
   const headers = new Headers({ Vary: "Origin", "Cache-Control": "no-store" });
   const origin = request.headers.get("Origin");
   const fail = (status: number, error: string) => Response.json({ error }, { status, headers });
@@ -41,7 +33,7 @@ export function withCors(
     return new Response(null, { status: 204, headers });
   }
 
-  const response = handler();
+  const response = await handler();
   headers.forEach((value, name) => response.headers.set(name, value));
   return response;
 }
