@@ -1,0 +1,34 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Magica Trial API",
+  "colors": {
+    "primary": "#8271D2",
+    "light": "#A99BE7",
+    "dark": "#6856B5"
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Guides",
+        "groups": [
+          {
+            "group": "Start building",
+            "pages": [
+              "introduction",
+              "authentication",
+              "long-running",
+              "tools",
+              "webhooks",
+              "errors"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API reference",
+        "openapi": "openapi.json"
+      }
+    ]
+  }
+}

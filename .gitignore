@@ -41,3 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+
+# Generated Prisma client
+/src/generated/prisma/
+
+# Local Trigger.dev worker build state
+/.trigger/

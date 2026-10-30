@@ -1,0 +1,18 @@
+---
+title: "Long-running work"
+description: "Idempotent submission, approvals, cancellation and recovery."
+---
+
+Submit a message to an existing chat, or use `/api/v1/chat/completions` with exactly one new user message. This is an asynchronous application API, not an OpenAI streaming compatibility endpoint. The server restores conversation history; callers cannot inject system or tool messages.
+
+Every submission requires a UUID `requestId`. Reuse it with an identical body after uncertain responses. Changed input conflicts. One active run per chat is enforced transactionally; use another chat for independent work.
+
+Runs move from `queued` to `running`, then `completed`, `failed`, or `cancelled`. A stop request can temporarily return `stopping`. Poll every few seconds with bounded backoff. A pending tool approval is visible inside `run.assistantMessage.tools`; it does not require a separate run status.
+
+To answer an approval, send its saved `inputHash`, a fresh decision `requestId`, and `approved` or `rejected` to `/api/v1/approvals/{approvalId}`. Decisions expire after 10 minutes. Repeated identical decisions are safe; conflicting or stale decisions are rejected. Plan mode requires approval before media tools start.
+
+Stopping prevents future work. Already submitted media can still finish and settle. Failed and cancelled runs retain partial text, completed tools and assets. Read the same run after reload or a network interruption. Start a new turn only after reviewing the saved outcome.
+
+Conversation and message lists use bounded cursor pagination. Message reads default to newest first on the public API. Pass `nextCursor` unchanged with the same filters and order. No cursor means the first page.
+
+Free text generation costs **0M credits**. Media usage settles once per tool. Numeric API credit fields keep their storage units; divide by 1,000,000 for display with the suffix **M credits**. Estimates reserve a temporary hold; actual usage can differ.

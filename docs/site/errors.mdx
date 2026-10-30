@@ -1,0 +1,20 @@
+---
+title: "Errors and recovery"
+description: "Diagnose requests without losing durable work."
+---
+
+Error responses contain `error`, `message`, `code`, and `traceId`. Save the trace ID with your application logs. Never log authorization headers, signing secrets or private media links.
+
+| HTTP status | Recovery |
+| --- | --- |
+| 400 / 413 / 415 | Correct invalid fields, reduce the request size, or send JSON |
+| 401 / 403 | Check key expiration, revocation and scopes |
+| 402 | Review the available balance before new media work |
+| 404 | Check the ID and ownership; inaccessible resources are not disclosed |
+| 409 | Read the existing run, resolve active work, or use a new request ID for intentionally different input |
+| 429 | Respect `Retry-After` and apply bounded backoff |
+| 500 / 503 | Retry reads; retry writes with the original request ID and identical input |
+
+A successful HTTP 202 means the work was accepted, not completed. Always inspect the terminal run status and its safe error message. Free-model unavailability never switches to a paid model. Partial results remain saved when a run fails.
+
+If a media submission has an uncertain outcome, read its existing run rather than automatically submitting it again. This prevents duplicate work and charges.

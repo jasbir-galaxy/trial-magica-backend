@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "src/generated/prisma/**",
+    // Generated local worker bundles; task source in trigger/ is still linted.
+    ".trigger/**",
   ]),
 ]);
 

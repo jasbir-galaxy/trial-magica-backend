@@ -1,0 +1,465 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id          String   @id @default(uuid()) @db.Uuid
+  clerkUserId String   @unique
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  webhookEndpoints WebhookEndpoint[]
+  webhookEvents WebhookEvent[]
+  apiKeys     PublicApiKey[]
+  chats       Chat[]
+  creditAccount CreditAccount?
+  runs AgentRun[]
+  uploads UploadBatch[]
+  attachments Attachment[]
+}
+
+model Chat {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  requestId String   @db.Uuid
+  title     String   @db.VarChar(120)
+  isFavorite Boolean @default(false)
+  deletedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  messages  Message[]
+  runs      AgentRun[]
+  uploads UploadBatch[]
+  messageAttachments MessageAttachment[]
+
+  @@unique([id, userId])
+  @@unique([userId, requestId])
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, deletedAt, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, isFavorite, deletedAt, createdAt(sort: Desc), id(sort: Desc)])
+}
+
+enum MessageRole {
+  user
+  assistant
+  system
+  tool
+}
+
+enum MessageStatus {
+  pending
+  streaming
+  completed
+  failed
+  cancelled
+}
+
+model Message {
+  id        String        @id @default(uuid()) @db.Uuid
+  chatId    String        @db.Uuid
+  role      MessageRole
+  status    MessageStatus
+  content   Json
+  error     String?       @db.VarChar(300)
+  createdAt DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime      @updatedAt @db.Timestamptz(3)
+  chat      Chat          @relation(fields: [chatId], references: [id], onDelete: Restrict)
+
+  userRuns AgentRun[] @relation("RunUserMessage")
+  assistantRuns AgentRun[] @relation("RunAssistantMessage")
+  tools ToolInvocation[] @relation("MessageTools")
+  attachments MessageAttachment[]
+
+  @@unique([id, chatId])
+  @@index([chatId, createdAt, id])
+}
+
+enum RunStatus {
+  queued
+  running
+  stopping
+  completed
+  failed
+  cancelled
+}
+
+model AgentRun {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reservations CreditReservation[]
+  chatId String @db.Uuid
+  requestId String @db.Uuid
+  userMessageId String @unique @db.Uuid
+  assistantMessageId String @unique @db.Uuid
+  triggerRunId String? @unique
+  status RunStatus @default(queued)
+  kind RunKind @default(agent)
+  planMode Boolean @default(false)
+  requestedModel String @default("openrouter/free")
+  actualModel String?
+  promptTokens Int?
+  completionTokens Int?
+  applicationCredits BigInt @default(0)
+  sequence Int @default(0)
+  error String? @db.VarChar(300)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  startedAt DateTime? @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
+  dispatchAfter DateTime @default(now()) @db.Timestamptz(3)
+  chat Chat @relation(fields: [chatId, userId], references: [id, userId], onDelete: Restrict)
+  userMessage Message @relation("RunUserMessage", fields: [userMessageId, chatId], references: [id, chatId], onDelete: Restrict)
+  assistantMessage Message @relation("RunAssistantMessage", fields: [assistantMessageId, chatId], references: [id, chatId], onDelete: Restrict)
+
+  tools ToolInvocation[] @relation("RunTools")
+  webhookEvents WebhookEvent[]
+  skills RunSkill[]
+
+  @@unique([id, userId])
+  @@unique([id, assistantMessageId, chatId])
+  @@unique([chatId, requestId])
+  @@index([chatId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([status, dispatchAfter])
+  @@index([status, startedAt])
+}
+
+
+enum ToolStatus {
+  awaiting_approval
+  pending
+  submitting
+  running
+  completed
+  failed
+  cancelled
+  unknown
+}
+
+model ToolInvocation {
+  id String @id @default(uuid()) @db.Uuid
+  runId String @db.Uuid
+  messageId String @db.Uuid
+  chatId String @db.Uuid
+  callId String @db.VarChar(200)
+  name String @db.VarChar(80)
+  label String @db.VarChar(80)
+  position Int
+  status ToolStatus @default(pending)
+  input Json
+  inputSchema Json
+  schemaHash String @db.VarChar(64)
+  inputHash String @db.VarChar(64)
+  subModelId String?
+  providerRunId String? @unique
+  triggerRunId String?
+  output Json?
+  credits Int @default(0)
+  error String? @db.VarChar(300)
+  durationMs Int?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  startedAt DateTime? @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
+  reconcileAfter DateTime @default(now()) @db.Timestamptz(3)
+  run AgentRun @relation("RunTools", fields: [runId, messageId, chatId], references: [id, assistantMessageId, chatId], onDelete: Restrict)
+  message Message @relation("MessageTools", fields: [messageId, chatId], references: [id, chatId], onDelete: Restrict)
+
+  approval Waitpoint?
+  reservation CreditReservation?
+
+  @@unique([id, runId])
+  @@unique([runId, callId])
+  @@unique([runId, position])
+  @@index([messageId, position])
+  @@index([status, reconcileAfter])
+  @@index([chatId, inputHash, status])
+  @@index([chatId, status])
+}
+
+
+model CreditAccount {
+  userId String @id @db.Uuid
+  balance BigInt
+  reserved BigInt @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  reservations CreditReservation[]
+  ledger CreditLedger[]
+}
+
+model CreditReservation {
+  id String @id @default(uuid()) @db.Uuid
+  key String @unique @db.VarChar(200)
+  userId String @db.Uuid
+  runId String @db.Uuid
+  toolId String? @unique @db.Uuid
+  amount BigInt
+  actualAmount BigInt?
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  settledAt DateTime? @db.Timestamptz(3)
+  account CreditAccount @relation(fields: [userId], references: [userId], onDelete: Restrict)
+  run AgentRun @relation(fields: [runId, userId], references: [id, userId], onDelete: Restrict)
+  tool ToolInvocation? @relation(fields: [toolId, runId], references: [id, runId], onDelete: Restrict)
+  ledger CreditLedger[]
+  @@unique([id, userId])
+  @@unique([toolId, runId])
+  @@index([runId, settledAt])
+}
+
+model CreditLedger {
+  id String @id @default(uuid()) @db.Uuid
+  key String @unique @db.VarChar(200)
+  userId String @db.Uuid
+  reservationId String? @db.Uuid
+  kind String @db.VarChar(20)
+  balanceDelta BigInt
+  reservedDelta BigInt
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  account CreditAccount @relation(fields: [userId], references: [userId], onDelete: Restrict)
+  reservation CreditReservation? @relation(fields: [reservationId, userId], references: [id, userId], onDelete: Restrict)
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+}
+
+enum WaitpointStatus {
+  pending
+  approved
+  rejected
+  expired
+  cancelled
+}
+
+enum ApprovalKind {
+  media
+  plan
+}
+
+model Waitpoint {
+  kind ApprovalKind @default(media)
+  id String @id @default(uuid()) @db.Uuid
+  toolId String @unique @db.Uuid
+  tokenId String? @unique @db.VarChar(200)
+  status WaitpointStatus @default(pending)
+  inputHash String @db.VarChar(64)
+  estimate Int
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  decidedAt DateTime? @db.Timestamptz(3)
+  decisionRequestId String? @unique @db.Uuid
+  deliveredAt DateTime? @db.Timestamptz(3)
+  tool ToolInvocation @relation(fields: [toolId], references: [id], onDelete: Restrict)
+  @@index([status, expiresAt])
+  @@index([deliveredAt, status, createdAt])
+}
+
+
+model SkillVersion {
+  contentHash String @id @db.VarChar(64)
+  formatVersion Int
+  name String @db.VarChar(64)
+  description String @db.VarChar(320)
+  body String
+  assets Json
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  runs RunSkill[]
+  @@unique([contentHash, name])
+}
+
+model RunSkill {
+  runId String @db.Uuid
+  name String @db.VarChar(64)
+  versionHash String @db.VarChar(64)
+  loadedAt DateTime @default(now()) @db.Timestamptz(3)
+  run AgentRun @relation(fields: [runId], references: [id], onDelete: Restrict)
+  version SkillVersion @relation(fields: [versionHash, name], references: [contentHash, name], onDelete: Restrict)
+  @@id([runId, name])
+  @@index([versionHash, name])
+}
+
+
+enum UploadStatus {
+  created
+  uploading
+  processing
+  completed
+  failed
+  cancelled
+}
+
+enum AttachmentStatus {
+  uploading
+  processing
+  ready
+  failed
+  cancelled
+}
+
+model UploadQuota {
+  month String @id @db.VarChar(7)
+  reservedBytes BigInt @default(0)
+  usedBytes BigInt @default(0)
+  uploads UploadBatch[]
+}
+
+model UploadBatch {
+  id String @id @db.Uuid
+  userId String @db.Uuid
+  chatId String @db.Uuid
+  requestId String @db.Uuid
+  manifestHash String @db.VarChar(64)
+  signedParams String
+  expiresAt DateTime @db.Timestamptz(3)
+  deadlineAt DateTime @db.Timestamptz(3)
+  status UploadStatus @default(created)
+  assemblyId String? @unique @db.VarChar(32)
+  error String? @db.VarChar(300)
+  reservedBytes BigInt
+  quotaMonth String @db.VarChar(7)
+  quotaSettled Boolean @default(false)
+  cleanupPending Boolean @default(false)
+  leaseToken String? @db.Uuid
+  leaseUntil DateTime? @db.Timestamptz(3)
+  reconcileAfter DateTime @default(now()) @db.Timestamptz(3)
+  attempts Int @default(0)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  finishedAt DateTime? @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  chat Chat @relation(fields: [chatId, userId], references: [id, userId], onDelete: Restrict)
+  quota UploadQuota @relation(fields: [quotaMonth], references: [month], onDelete: Restrict)
+  attachments Attachment[]
+  @@unique([userId, requestId])
+  @@unique([id, userId])
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([chatId, status, createdAt(sort: Desc)])
+  @@index([userId, status, createdAt])
+  @@index([cleanupPending, reconcileAfter])
+  @@index([status, reconcileAfter])
+  @@index([chatId, status])
+}
+
+model Attachment {
+  id String @id @db.Uuid
+  uploadId String @db.Uuid
+  userId String @db.Uuid
+  name String @db.VarChar(180)
+  mimeType String @db.VarChar(100)
+  size Int
+  storedSize Int?
+  position Int
+  status AttachmentStatus @default(uploading)
+  objectKey String @unique @db.VarChar(200)
+  providerFileId String? @db.VarChar(200)
+  md5 String? @db.VarChar(32)
+  error String? @db.VarChar(300)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  upload UploadBatch @relation(fields: [uploadId, userId], references: [id, userId], onDelete: Restrict)
+  messages MessageAttachment[]
+  @@unique([id, userId])
+  @@unique([uploadId, position])
+  @@index([userId, status, createdAt(sort: Desc), id(sort: Desc)])
+}
+
+model MessageAttachment {
+  messageId String @db.Uuid
+  chatId String @db.Uuid
+  userId String @db.Uuid
+  attachmentId String @db.Uuid
+  position Int
+  message Message @relation(fields: [messageId, chatId], references: [id, chatId], onDelete: Restrict)
+  chat Chat @relation(fields: [chatId, userId], references: [id, userId], onDelete: Restrict)
+  attachment Attachment @relation(fields: [attachmentId, userId], references: [id, userId], onDelete: Restrict)
+  @@id([messageId, position])
+  @@unique([messageId, attachmentId])
+  @@index([attachmentId, userId])
+  @@index([chatId, userId])
+}
+
+
+enum RunKind {
+  agent
+  tool
+}
+
+model PublicApiKey {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  requestId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  name String @db.VarChar(80)
+  prefix String @db.VarChar(20)
+  tokenHash String @unique @db.VarChar(64)
+  scopes String[]
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+  revokedAt DateTime? @db.Timestamptz(3)
+  lastUsedAt DateTime? @db.Timestamptz(3)
+  windowStart DateTime @default(now()) @db.Timestamptz(3)
+  windowCount Int @default(0)
+  @@unique([userId, requestId])
+  @@index([userId, revokedAt, expiresAt])
+}
+
+
+model WebhookEndpoint {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  requestId String @db.Uuid
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  url String @db.VarChar(2048)
+  events String[]
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  disabledAt DateTime? @db.Timestamptz(3)
+  deliveries WebhookDelivery[]
+  @@unique([id, userId])
+  @@unique([userId, requestId])
+  @@index([userId, disabledAt])
+}
+
+model WebhookEvent {
+  id String @id @default(uuid()) @db.Uuid
+  key String @unique @db.VarChar(200)
+  userId String @db.Uuid
+  runId String @db.Uuid
+  type String @db.VarChar(40)
+  body String @db.VarChar(2048)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  run AgentRun @relation(fields: [runId, userId], references: [id, userId], onDelete: Restrict)
+  deliveries WebhookDelivery[]
+  @@unique([id, userId])
+  @@index([runId])
+}
+
+enum WebhookDeliveryStatus {
+  pending
+  delivering
+  delivered
+  failed
+  disabled
+}
+
+model WebhookDelivery {
+  id String @id @default(uuid()) @db.Uuid
+  userId String @db.Uuid
+  eventId String @db.Uuid
+  endpointId String @db.Uuid
+  event WebhookEvent @relation(fields: [eventId, userId], references: [id, userId], onDelete: Restrict)
+  endpoint WebhookEndpoint @relation(fields: [endpointId, userId], references: [id, userId], onDelete: Restrict)
+  status WebhookDeliveryStatus @default(pending)
+  attempts Int @default(0)
+  claimId String? @db.Uuid
+  nextAttemptAt DateTime @default(now()) @db.Timestamptz(3)
+  responseStatus Int?
+  error String? @db.VarChar(200)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  deliveredAt DateTime? @db.Timestamptz(3)
+  @@unique([eventId, endpointId])
+  @@index([status, nextAttemptAt, id])
+  @@index([endpointId, createdAt(sort: Desc), id(sort: Desc)])
+}

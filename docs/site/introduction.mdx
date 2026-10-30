@@ -1,0 +1,27 @@
+---
+title: "Build with Magica"
+description: "Start durable conversations, run media tools, and receive completion events."
+---
+
+The trial API exposes the same persisted conversations, approvals and media results as the app. Requests return quickly; a run continues in the background after you disconnect.
+
+<Steps>
+<Step title="Create an API key">
+Sign in to the app and open **API & webhooks**. Create a scoped key and save it securely; the secret appears once.
+</Step>
+<Step title="Send one new message">
+Set `MAGICA_API_BASE` to your backend origin (locally, `http://localhost:3001`) and `MAGICA_API_KEY` to the key. Use a fresh UUID for a new request. Retry the same work with the same UUID and body.
+
+```bash
+curl "$MAGICA_API_BASE/api/v1/chat/completions" \
+  -H "Authorization: Bearer $MAGICA_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"requestId":"d5040488-8d68-48cb-a11b-85226a419f4b","messages":[{"role":"user","content":"Write a short greeting."}]}'
+```
+</Step>
+<Step title="Follow the run">
+Read `runId` from the HTTP 202 response and poll `GET /api/v1/runs/{runId}`. Subscribe to webhooks to learn when work finishes. Review and answer approvals when media work requires a decision.
+</Step>
+</Steps>
+
+The API reference is generated from the same Zod contracts used by the backend. Download [OpenAPI](/openapi.json) for client generation. The local specification targets port 3001; set the deployment server URL when publishing the docs.

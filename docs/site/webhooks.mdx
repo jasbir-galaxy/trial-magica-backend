@@ -1,0 +1,30 @@
+---
+title: "Webhooks"
+description: "Verify signed lifecycle events and handle duplicate deliveries."
+---
+
+Create an endpoint from **API & webhooks** and save the one-time signing secret. Up to five active HTTPS endpoints are supported. Destinations must use port 443, resolve to public IPv4 addresses, and respond directly without a redirect. Private network addresses are rejected at registration and again at delivery.
+
+Subscribe to `agent.started`, `agent.completed`, `agent.failed`, `agent.cancelled`, and `tool.completed`. Each event contains an immutable `id`, `type`, `createdAt`, and `data` with `chatId`, `runId`, `messageId`, `status`, and optionally `toolId`. Prompts, media URLs and credentials are excluded. Read the owned run through the API for its result.
+
+Events are saved in the same transaction as their state changes. Delivery is at least once and may be out of order. Deduplicate by event ID, durably record acceptance, and return a 2xx response promptly. Network failures, 408, 429 and 5xx responses retry up to eight attempts with exponential backoff. Other responses, including redirects, end delivery. A disabled endpoint stops pending work; an in-flight request may still arrive.
+
+## Verify signatures
+
+Requests carry `X-Magica-Event-Id` and `X-Magica-Signature: t=<unix-seconds>,v1=<hex-hmac>`. Signatures use HMAC-SHA256 over `timestamp.eventId.rawBody` with the full `whsec_…` string as the UTF-8 key. Verify the original body bytes before parsing JSON, reject timestamps outside five minutes, and compare digests in constant time.
+
+```typescript
+import { createHmac, timingSafeEqual } from "node:crypto";
+
+function verify(secret: string, id: string, rawBody: string, signature: string) {
+  const match = /^t=(\d+),v1=([a-f0-9]{64})$/.exec(signature);
+  if (!match || Math.abs(Date.now() / 1000 - Number(match[1])) > 300) return false;
+  const expected = createHmac("sha256", secret)
+    .update(`${match[1]}.${id}.${rawBody}`).digest();
+  return timingSafeEqual(expected, Buffer.from(match[2], "hex"));
+}
+```
+
+After verification, check that the parsed body `id` equals the header ID. Store that ID to prevent replay within the accepted time window. A retry retains the event ID and body but gets a fresh timestamp and signature.
+
+Read cursor-paginated delivery history in settings or the account API. It reports attempts, response status and safe errors. Rotate secrets by creating a replacement endpoint and disabling the old one. New subscriptions receive future events only.
