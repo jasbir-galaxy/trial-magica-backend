@@ -24,7 +24,8 @@
     "docs:generate": "tsx scripts/export-openapi.ts",
     "docs:check": "tsx scripts/export-openapi.ts --check",
     "deploy:check": "tsx scripts/check-deployment.ts",
-    "trigger:deploy": "trigger deploy --profile magica-work-trial --env prod --env-file .env.release.local"
+    "trigger:deploy": "trigger deploy --profile magica-work-trial --env prod --env-file .env.release.local",
+    "test:migrations": "node scripts/check-fresh-migrations.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1158.0",

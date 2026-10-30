@@ -37,3 +37,15 @@ Connect the free Neon resource to backend **Production** only. Preview deploymen
 The direct migration URL is optional, so existing local setups keep working. This configuration change adds no database schema migration. Apply all committed migrations in order; feature-specific migration and rollback notes are linked from the documentation index. Never run `migrate reset` or `db push` against the production database.
 
 If a release fails, stop new work and restore the prior Vercel deployments and matching Trigger task version. Preserve persisted runs, attachments, credit entries, and webhook deliveries. Do not drop tables or rotate the webhook master as a rollback: those actions would destroy recovery or signature continuity. Keep compatible schema additions in place and reconcile active runs before resuming traffic.
+
+## Fresh-database migration verification
+
+Before release, set `DATABASE_MIGRATION_TEST_URL` to the local Docker PostgreSQL server on port 5433 and run `pnpm test:migrations`. The check creates a uniquely named disposable database, applies every migration in order, repeats deployment to check idempotency, verifies ownership foreign keys and the final index, and removes only that database. It never accepts a hosted database URL.
+
+### Upload ownership migration repair
+
+Uploads originally referenced `Chat(id, userId)` before the credit migration created its unique index. Two additive migrations preserve all historical checksums: an earlier prerequisite supplies a temporary unique index on fresh installations, and a final atomic migration rebinds foreign keys to the canonical index and removes the temporary one. Already-initialized databases skip both operations when the canonical index exists. The final schema and application contracts are unchanged; Prisma client regeneration is unnecessary.
+
+For a database stopped at `20261029000000_uploads`, inspect its tables, constraints, and migration record first. PostgreSQL may retain statements before the failure. Apply the prerequisite SQL, then complete only the missing statements from the unchanged uploads migration. Verify all indexes, foreign keys, and checks before recording both migrations with `prisma migrate resolve --applied <name>`, then run `prisma migrate deploy`. Never mark incomplete SQL as applied or reset a database containing user data.
+
+Rollback: these changes only restore constraints already required by the application; an application rollback can retain them. Do not drop the bridge index while foreign keys depend on it. If the final repair fails, its DO block rolls back atomically; fix the cause and use Prisma's failed-migration recovery before retrying. No rows are deleted or rewritten.
