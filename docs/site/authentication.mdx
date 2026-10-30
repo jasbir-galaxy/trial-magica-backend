@@ -1,0 +1,18 @@
+---
+title: "Authentication"
+description: "Scoped API keys, session management, and safe retries."
+---
+
+Send `Authorization: Bearer <key>` to `/api/v1/*`. Keys expire in 1–90 days (30 by default), can be revoked immediately, and are shown only when created. Up to 10 active keys are allowed per account. Store keys on your server, never in browser bundles or logs.
+
+| Scope | Permission |
+| --- | --- |
+| `chats:read` | Read owned chats, messages, runs and tool schemas |
+| `runs:write` | Create chats, submit messages or tools, and stop runs |
+| `approvals:write` | Approve or decline saved decisions |
+
+Key and webhook management routes under `/api/app/v1/*` require your authenticated application session. An API key cannot create other keys or change webhook subscriptions. Use the app's **API & webhooks** page for these actions.
+
+If a credential creation response is lost, refresh the list, revoke or disable the newly created entry, and create another. Repeating its `requestId` returns a conflict rather than exposing the secret again.
+
+API keys permit 60 requests per minute each. Send admission is additionally limited to 10 turns per minute per account. Honor `Retry-After` on 429 responses. Use bounded retries with jitter; do not repeatedly submit new request IDs after a timeout.

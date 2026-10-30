@@ -1,0 +1,27 @@
+---
+title: "Media tools"
+description: "Discover current schemas and execute the three required tools."
+---
+
+The agent selects tools from a normal conversation. You can also execute one directly with `POST /api/v1/tools/{toolName}/runs`; direct execution does not call a language model.
+
+Call `GET /api/v1/tools` first. Its `inputSchema` is authoritative, including current image-generation modes and fields. Inputs are validated and pinned when work is accepted. A direct request includes `chatId`, `requestId`, and `input`.
+
+| Tool | Behavior |
+| --- | --- |
+| `crop_image` | Crop a public image URL with a complete percent, pixel, or `crop` rectangle |
+| `gpt_image_2` | Generate with `gpt-image-2-text`, or edit an image with `gpt-image-2-edit`; use the current catalog fields |
+| `merge_videos` | Merge 2–100 ordered video URLs; transitions support `none`, `fade`, and `dissolve` |
+
+Media approval and credit rules apply to both conversational and direct execution. Read tool status and approval from the run. Completed outputs contain typed assets. Save the run ID before polling; reconnecting must not start another tool job.
+
+```json
+{
+  "requestId": "7579e1fd-dde9-42f1-9f71-d3f56a5b8841",
+  "chatId": "f78c77bb-dea6-4d4b-9d45-01a3e1bc67a6",
+  "input": {
+    "image_url": "https://your-public-host.example/image.png",
+    "crop": { "x": 0, "y": 0, "width": 64, "height": 64 }
+  }
+}
+```

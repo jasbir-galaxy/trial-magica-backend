@@ -1,0 +1,913 @@
+{
+  "version": 1,
+  "models": {
+    "crop_image": {
+      "nodeType": "crop_image",
+      "subModels": [
+        {
+          "subModelId": "crop_image",
+          "inputFieldOptions": [
+            {
+              "type": "image",
+              "dataType": "string",
+              "default": "",
+              "label": "Input Image",
+              "maxImages": 1,
+              "required": true,
+              "helpText": "Upload an image to crop",
+              "zodExpectedName": "image_url"
+            },
+            {
+              "type": "slider",
+              "dataType": "number",
+              "default": 0,
+              "label": "X Position (%)",
+              "min": 0,
+              "max": 100,
+              "step": 1,
+              "helpText": "Horizontal crop start position (percentage from left)",
+              "zodExpectedName": "x_percent"
+            },
+            {
+              "type": "slider",
+              "dataType": "number",
+              "default": 0,
+              "label": "Y Position (%)",
+              "min": 0,
+              "max": 100,
+              "step": 1,
+              "helpText": "Vertical crop start position (percentage from top)",
+              "zodExpectedName": "y_percent"
+            },
+            {
+              "type": "slider",
+              "dataType": "number",
+              "default": 100,
+              "label": "Width (%)",
+              "min": 0,
+              "max": 100,
+              "step": 0.001,
+              "helpText": "Crop width as a percentage of the original image",
+              "zodExpectedName": "width_percent"
+            },
+            {
+              "type": "slider",
+              "dataType": "number",
+              "default": 100,
+              "label": "Height (%)",
+              "min": 0,
+              "max": 100,
+              "step": 0.001,
+              "helpText": "Crop height as a percentage of the original image",
+              "zodExpectedName": "height_percent"
+            },
+            {
+              "type": "number",
+              "dataType": "number",
+              "default": null,
+              "label": "Width (px)",
+              "min": 1,
+              "step": 1,
+              "isAdvanced": true,
+              "skipExecutionDefault": true,
+              "helpText": "Exact crop width in pixels. When width and height are set without X/Y, the crop is centered.",
+              "zodExpectedName": "width_px"
+            },
+            {
+              "type": "number",
+              "dataType": "number",
+              "default": null,
+              "label": "Height (px)",
+              "min": 1,
+              "step": 1,
+              "isAdvanced": true,
+              "skipExecutionDefault": true,
+              "helpText": "Exact crop height in pixels. When width and height are set without X/Y, the crop is centered.",
+              "zodExpectedName": "height_px"
+            },
+            {
+              "type": "number",
+              "dataType": "number",
+              "default": null,
+              "label": "X Position (px)",
+              "min": 0,
+              "step": 1,
+              "isAdvanced": true,
+              "skipExecutionDefault": true,
+              "helpText": "Optional exact crop start position from the left. Leave empty to center pixel crops.",
+              "zodExpectedName": "x_px"
+            },
+            {
+              "type": "number",
+              "dataType": "number",
+              "default": null,
+              "label": "Y Position (px)",
+              "min": 0,
+              "step": 1,
+              "isAdvanced": true,
+              "skipExecutionDefault": true,
+              "helpText": "Optional exact crop start position from the top. Leave empty to center pixel crops.",
+              "zodExpectedName": "y_px"
+            }
+          ],
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "image_url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "crop": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "y": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "width": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  },
+                  "height": {
+                    "nullable": true,
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9007199254740991
+                  }
+                }
+              },
+              "x_px": {
+                "nullable": true,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "y_px": {
+                "nullable": true,
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "width_px": {
+                "nullable": true,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "height_px": {
+                "nullable": true,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "x_percent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "y_percent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "width_percent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "height_percent": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              }
+            },
+            "required": [
+              "image_url"
+            ]
+          }
+        }
+      ]
+    },
+    "merge_videos": {
+      "nodeType": "merge_videos",
+      "subModels": [
+        {
+          "subModelId": "merge_videos",
+          "inputFieldOptions": [
+            {
+              "type": "video",
+              "dataType": "string[]",
+              "default": [],
+              "label": "Videos",
+              "maxItems": 100,
+              "required": true,
+              "helpText": "Upload 2\u2013100 videos to concatenate (in order).",
+              "zodExpectedName": "video_urls"
+            },
+            {
+              "type": "select",
+              "dataType": "string",
+              "default": "none",
+              "label": "Transition",
+              "options": [
+                {
+                  "value": "none",
+                  "label": "None"
+                },
+                {
+                  "value": "fade",
+                  "label": "Fade"
+                },
+                {
+                  "value": "dissolve",
+                  "label": "Dissolve"
+                }
+              ],
+              "helpText": "Transition effect between videos",
+              "zodExpectedName": "transition"
+            }
+          ],
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "video_urls": {
+                "minItems": 2,
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "transition": {
+                "default": "none",
+                "type": "string",
+                "enum": [
+                  "none",
+                  "fade",
+                  "dissolve"
+                ]
+              }
+            },
+            "required": [
+              "video_urls"
+            ]
+          }
+        }
+      ]
+    },
+    "gpt-image-2": {
+      "nodeType": "gpt_image_2",
+      "subModels": [
+        {
+          "subModelId": "gpt-image-2-text",
+          "inputFieldOptions": [
+            {
+              "type": "textarea",
+              "dataType": "string",
+              "zodExpectedName": "prompt",
+              "label": "Prompt",
+              "description": "Text prompt describing the image to generate, max 4000 characters, required",
+              "default": "",
+              "required": true,
+              "max": 4000,
+              "placeholder": "Describe the image you want to create..."
+            },
+            {
+              "type": "composite-select",
+              "dataType": "string",
+              "zodExpectedName": "size",
+              "label": "Size",
+              "description": "Output image dimensions with default Auto. Pick a preset or choose Custom to enter width x height. Custom size: width and height must each be 1024-3840 px, multiples of 16; long-to-short ratio <= 3:1; total pixels 655,360-8,294,400. Prefer a preset unless exact dimensions are required. For 1080p aspect output, use 1920x1088 or 1088x1920; do not use 1920x1080 because 1080 is not a multiple of 16.",
+              "options": [
+                {
+                  "value": "Custom",
+                  "label": "Custom"
+                },
+                {
+                  "value": "Auto",
+                  "label": "Auto",
+                  "icon": "IconBoxMargin"
+                },
+                {
+                  "value": "1024x1024",
+                  "label": "Square (1024x1024)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "1536x1024",
+                  "label": "Landscape (1536x1024)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "1024x1536",
+                  "label": "Portrait (1024x1536)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "2048x2048",
+                  "label": "2K Square (2048x2048)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "2048x1152",
+                  "label": "2K Landscape (2048x1152)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "3840x2160",
+                  "label": "4K Landscape (3840x2160)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "2160x3840",
+                  "label": "4K Portrait (2160x3840)",
+                  "icon": "IconAspectRatio"
+                }
+              ],
+              "default": "Auto",
+              "required": false,
+              "customValue": "Custom",
+              "customFields": [
+                {
+                  "type": "number",
+                  "dataType": "number",
+                  "zodExpectedName": "width",
+                  "label": "Width",
+                  "default": 1024,
+                  "required": true,
+                  "min": 1024,
+                  "max": 3840,
+                  "step": 16,
+                  "helpText": "Custom size: width and height must each be 1024-3840 px, multiples of 16; long-to-short ratio <= 3:1; total pixels 655,360-8,294,400"
+                },
+                {
+                  "type": "number",
+                  "dataType": "number",
+                  "zodExpectedName": "height",
+                  "label": "Height",
+                  "default": 1024,
+                  "required": true,
+                  "min": 1024,
+                  "max": 3840,
+                  "step": 16,
+                  "helpText": "Custom size: width and height must each be 1024-3840 px, multiples of 16; long-to-short ratio <= 3:1; total pixels 655,360-8,294,400"
+                }
+              ]
+            },
+            {
+              "type": "select",
+              "dataType": "string",
+              "zodExpectedName": "quality",
+              "label": "Quality",
+              "description": "Rendering quality level affecting detail and cost with default High, options are High, Medium, Low",
+              "options": [
+                {
+                  "value": "High",
+                  "label": "High"
+                },
+                {
+                  "value": "Medium",
+                  "label": "Medium"
+                },
+                {
+                  "value": "Low",
+                  "label": "Low"
+                }
+              ],
+              "default": "High",
+              "required": false
+            },
+            {
+              "type": "select",
+              "dataType": "string",
+              "zodExpectedName": "background",
+              "label": "Background",
+              "description": "Background mode for the output image with default Auto, options are Auto and Opaque.",
+              "options": [
+                {
+                  "value": "Auto",
+                  "label": "Auto"
+                },
+                {
+                  "value": "Opaque",
+                  "label": "Opaque"
+                }
+              ],
+              "default": "Auto",
+              "required": false,
+              "isAdvanced": true
+            },
+            {
+              "type": "select",
+              "dataType": "number",
+              "zodExpectedName": "n",
+              "label": "Number of Images",
+              "description": "Number of images to generate with default 1, options are 1, 2, 3, 4",
+              "options": [
+                {
+                  "value": 1,
+                  "label": "1"
+                },
+                {
+                  "value": 2,
+                  "label": "2"
+                },
+                {
+                  "value": 3,
+                  "label": "3"
+                },
+                {
+                  "value": 4,
+                  "label": "4"
+                }
+              ],
+              "default": 1,
+              "required": false
+            },
+            {
+              "type": "select",
+              "dataType": "string",
+              "zodExpectedName": "output_format",
+              "label": "Output Format",
+              "description": "Output file format of the generated image with default PNG, options are PNG, JPEG, WebP.",
+              "options": [
+                {
+                  "value": "PNG",
+                  "label": "PNG"
+                },
+                {
+                  "value": "JPEG",
+                  "label": "JPEG"
+                },
+                {
+                  "value": "WebP",
+                  "label": "WebP"
+                }
+              ],
+              "default": "PNG",
+              "required": false,
+              "isAdvanced": true
+            }
+          ],
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "processId": {
+                "type": "string"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "size": {},
+              "quality": {
+                "default": "High",
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/__schema0"
+                  }
+                ]
+              },
+              "background": {
+                "type": "string",
+                "enum": [
+                  "Auto",
+                  "Opaque"
+                ]
+              },
+              "n": {
+                "default": 1,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              },
+              "output_format": {
+                "default": "PNG",
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/__schema1"
+                  }
+                ]
+              },
+              "width": {},
+              "height": {}
+            },
+            "required": [
+              "prompt"
+            ],
+            "definitions": {
+              "__schema0": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      null
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/__schema0"
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/__schema0"
+                    }
+                  }
+                ]
+              },
+              "__schema1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      null
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/__schema1"
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/__schema1"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "subModelId": "gpt-image-2-edit",
+          "inputFieldOptions": [
+            {
+              "type": "textarea",
+              "dataType": "string",
+              "zodExpectedName": "prompt",
+              "label": "Prompt",
+              "description": "Text prompt describing how to edit the image, max 4000 characters, required",
+              "default": "",
+              "required": true,
+              "max": 4000,
+              "placeholder": "Describe how you want to edit the image..."
+            },
+            {
+              "type": "image",
+              "dataType": "string[]",
+              "zodExpectedName": "uploadedImages",
+              "label": "Input Images",
+              "description": "Source images to edit, accepts up to 10 image uploads, required",
+              "default": [],
+              "required": true,
+              "maxImages": 10,
+              "helpText": "Upload images to edit (max 10 images)",
+              "instanceId": "gpt-image-2-edit-images"
+            },
+            {
+              "type": "composite-select",
+              "dataType": "string",
+              "zodExpectedName": "size",
+              "label": "Size",
+              "description": "Output image dimensions with default Auto. Pick a preset or choose Custom to enter width x height. Custom size: width and height must each be 1024-3840 px, multiples of 16; long-to-short ratio <= 3:1; total pixels 655,360-8,294,400. Prefer a preset unless exact dimensions are required. For 1080p aspect output, use 1920x1088 or 1088x1920; do not use 1920x1080 because 1080 is not a multiple of 16.",
+              "options": [
+                {
+                  "value": "Custom",
+                  "label": "Custom"
+                },
+                {
+                  "value": "Auto",
+                  "label": "Auto",
+                  "icon": "IconBoxMargin"
+                },
+                {
+                  "value": "1024x1024",
+                  "label": "Square (1024x1024)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "1536x1024",
+                  "label": "Landscape (1536x1024)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "1024x1536",
+                  "label": "Portrait (1024x1536)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "2048x2048",
+                  "label": "2K Square (2048x2048)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "2048x1152",
+                  "label": "2K Landscape (2048x1152)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "3840x2160",
+                  "label": "4K Landscape (3840x2160)",
+                  "icon": "IconAspectRatio"
+                },
+                {
+                  "value": "2160x3840",
+                  "label": "4K Portrait (2160x3840)",
+                  "icon": "IconAspectRatio"
+                }
+              ],
+              "default": "Auto",
+              "required": false,
+              "customValue": "Custom",
+              "customFields": [
+                {
+                  "type": "number",
+                  "dataType": "number",
+                  "zodExpectedName": "width",
+                  "label": "Width",
+                  "default": 1024,
+                  "required": true,
+                  "min": 1024,
+                  "max": 3840,
+                  "step": 16,
+                  "helpText": "Custom size: width and height must each be 1024-3840 px, multiples of 16; long-to-short ratio <= 3:1; total pixels 655,360-8,294,400"
+                },
+                {
+                  "type": "number",
+                  "dataType": "number",
+                  "zodExpectedName": "height",
+                  "label": "Height",
+                  "default": 1024,
+                  "required": true,
+                  "min": 1024,
+                  "max": 3840,
+                  "step": 16,
+                  "helpText": "Custom size: width and height must each be 1024-3840 px, multiples of 16; long-to-short ratio <= 3:1; total pixels 655,360-8,294,400"
+                }
+              ]
+            },
+            {
+              "type": "select",
+              "dataType": "string",
+              "zodExpectedName": "quality",
+              "label": "Quality",
+              "description": "Rendering quality level affecting detail and cost with default High, options are High, Medium, Low",
+              "options": [
+                {
+                  "value": "High",
+                  "label": "High"
+                },
+                {
+                  "value": "Medium",
+                  "label": "Medium"
+                },
+                {
+                  "value": "Low",
+                  "label": "Low"
+                }
+              ],
+              "default": "High",
+              "required": false
+            },
+            {
+              "type": "select",
+              "dataType": "string",
+              "zodExpectedName": "background",
+              "label": "Background",
+              "description": "Background mode for the output image with default Auto, options are Auto, Opaque.",
+              "options": [
+                {
+                  "value": "Auto",
+                  "label": "Auto"
+                },
+                {
+                  "value": "Opaque",
+                  "label": "Opaque"
+                }
+              ],
+              "default": "Auto",
+              "required": false,
+              "isAdvanced": true
+            },
+            {
+              "type": "select",
+              "dataType": "number",
+              "zodExpectedName": "n",
+              "label": "Number of Images",
+              "description": "Number of images to generate with default 1, options are 1, 2, 3, 4",
+              "options": [
+                {
+                  "value": 1,
+                  "label": "1"
+                },
+                {
+                  "value": 2,
+                  "label": "2"
+                },
+                {
+                  "value": 3,
+                  "label": "3"
+                },
+                {
+                  "value": 4,
+                  "label": "4"
+                }
+              ],
+              "default": 1,
+              "required": false
+            },
+            {
+              "type": "select",
+              "dataType": "string",
+              "zodExpectedName": "output_format",
+              "label": "Output Format",
+              "description": "Output file format of the generated image with default PNG, options are PNG, JPEG, WebP.",
+              "options": [
+                {
+                  "value": "PNG",
+                  "label": "PNG"
+                },
+                {
+                  "value": "JPEG",
+                  "label": "JPEG"
+                },
+                {
+                  "value": "WebP",
+                  "label": "WebP"
+                }
+              ],
+              "default": "PNG",
+              "required": false,
+              "isAdvanced": true
+            }
+          ],
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "processId": {
+                "type": "string"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "uploadedImages": {
+                "minItems": 1,
+                "maxItems": 10,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "mask": {
+                "type": "string",
+                "format": "uri"
+              },
+              "size": {},
+              "quality": {
+                "default": "High",
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/__schema0"
+                  }
+                ]
+              },
+              "background": {
+                "type": "string",
+                "enum": [
+                  "Auto",
+                  "Opaque"
+                ]
+              },
+              "n": {
+                "default": 1,
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 4
+              },
+              "output_format": {
+                "default": "PNG",
+                "allOf": [
+                  {
+                    "$ref": "#/definitions/__schema1"
+                  }
+                ]
+              },
+              "width": {},
+              "height": {}
+            },
+            "required": [
+              "prompt",
+              "uploadedImages"
+            ],
+            "definitions": {
+              "__schema0": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      null
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/__schema0"
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/__schema0"
+                    }
+                  }
+                ]
+              },
+              "__schema1": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "string",
+                    "nullable": true,
+                    "enum": [
+                      null
+                    ]
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/definitions/__schema1"
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": {
+                      "$ref": "#/definitions/__schema1"
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
