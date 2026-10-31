@@ -51,3 +51,8 @@ Uploads originally referenced `Chat(id, userId)` before the credit migration cre
 For a database stopped at `20261029000000_uploads`, inspect its tables, constraints, and migration record first. PostgreSQL may retain statements before the failure. Apply the prerequisite SQL, then complete only the missing statements from the unchanged uploads migration. Verify all indexes, foreign keys, and checks before recording both migrations with `prisma migrate resolve --applied <name>`, then run `prisma migrate deploy`. Never mark incomplete SQL as applied or reset a database containing user data.
 
 Rollback: these changes only restore constraints already required by the application; an application rollback can retain them. Do not drop the bridge index while foreign keys depend on it. If the final repair fails, its DO block rolls back atomically; fix the cause and use Prisma's failed-migration recovery before retrying. No rows are deleted or rewritten.
+
+## Hosted acceptance
+
+See [hosted acceptance](hosted-acceptance.md) for the verified release revisions,
+real conversation evidence, repeatable checks and remaining submission work.

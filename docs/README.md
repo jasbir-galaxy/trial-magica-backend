@@ -27,3 +27,5 @@
 - [Production deployment](guides/deployment.md)
 
 - [Rich messages, diagnostics, and reader-first rollout](guides/rich-messages-and-diagnostics.md)
+
+- [Hosted acceptance and remaining submission work](guides/hosted-acceptance.md)
