@@ -25,3 +25,5 @@
 - Mintlify site: [Introduction](site/introduction.mdx), [Authentication](site/authentication.mdx), [Run lifecycle](site/long-running.mdx), [Tools](site/tools.mdx), [Webhooks](site/webhooks.mdx), [Errors](site/errors.mdx)
 
 - [Production deployment](guides/deployment.md)
+
+- [Rich messages, diagnostics, and reader-first rollout](guides/rich-messages-and-diagnostics.md)

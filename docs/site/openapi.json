@@ -3097,6 +3097,150 @@
                           "attachmentId"
                         ],
                         "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "thinking"
+                          },
+                          "startedAt": {
+                            "type": "string",
+                            "format": "date-time",
+                            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                          },
+                          "durationMs": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "startedAt",
+                          "durationMs"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "reasoning"
+                          },
+                          "text": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 32000
+                          },
+                          "format": {
+                            "type": "string",
+                            "enum": [
+                              "text",
+                              "summary"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "text",
+                          "format"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "citation"
+                          },
+                          "url": {
+                            "type": "string",
+                            "maxLength": 4096,
+                            "format": "uri"
+                          },
+                          "title": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 500
+                          },
+                          "startIndex": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 32000
+                          },
+                          "endIndex": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 32000
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "url",
+                          "title"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "const": "usage"
+                          },
+                          "actualModel": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 200
+                          },
+                          "promptTokens": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "completionTokens": {
+                            "anyOf": [
+                              {
+                                "type": "integer",
+                                "minimum": 0,
+                                "maximum": 9007199254740991
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "applicationCredits": {
+                            "type": "number",
+                            "const": 0
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "actualModel",
+                          "promptTokens",
+                          "completionTokens",
+                          "applicationCredits"
+                        ],
+                        "additionalProperties": false
                       }
                     ]
                   }
@@ -3367,7 +3511,8 @@
                                           "type": "string",
                                           "enum": [
                                             "image",
-                                            "video"
+                                            "video",
+                                            "audio"
                                           ]
                                         },
                                         "url": {
@@ -3418,7 +3563,8 @@
                                           "type": "string",
                                           "enum": [
                                             "image",
-                                            "video"
+                                            "video",
+                                            "audio"
                                           ]
                                         },
                                         "url": {
@@ -3882,6 +4028,150 @@
                             "attachmentId"
                           ],
                           "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "thinking"
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            "durationMs": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "startedAt",
+                            "durationMs"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "reasoning"
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 32000
+                            },
+                            "format": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "summary"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "text",
+                            "format"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "citation"
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 4096,
+                              "format": "uri"
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 500
+                            },
+                            "startIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            },
+                            "endIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url",
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "usage"
+                            },
+                            "actualModel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "promptTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "completionTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "applicationCredits": {
+                              "type": "number",
+                              "const": 0
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "actualModel",
+                            "promptTokens",
+                            "completionTokens",
+                            "applicationCredits"
+                          ],
+                          "additionalProperties": false
                         }
                       ]
                     }
@@ -4152,7 +4442,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -4203,7 +4494,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -4563,6 +4855,150 @@
                             "attachmentId"
                           ],
                           "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "thinking"
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            "durationMs": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "startedAt",
+                            "durationMs"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "reasoning"
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 32000
+                            },
+                            "format": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "summary"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "text",
+                            "format"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "citation"
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 4096,
+                              "format": "uri"
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 500
+                            },
+                            "startIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            },
+                            "endIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url",
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "usage"
+                            },
+                            "actualModel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "promptTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "completionTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "applicationCredits": {
+                              "type": "number",
+                              "const": 0
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "actualModel",
+                            "promptTokens",
+                            "completionTokens",
+                            "applicationCredits"
+                          ],
+                          "additionalProperties": false
                         }
                       ]
                     }
@@ -4833,7 +5269,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -4884,7 +5321,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -5491,6 +5929,150 @@
                             "attachmentId"
                           ],
                           "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "thinking"
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            "durationMs": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "startedAt",
+                            "durationMs"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "reasoning"
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 32000
+                            },
+                            "format": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "summary"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "text",
+                            "format"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "citation"
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 4096,
+                              "format": "uri"
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 500
+                            },
+                            "startIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            },
+                            "endIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url",
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "usage"
+                            },
+                            "actualModel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "promptTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "completionTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "applicationCredits": {
+                              "type": "number",
+                              "const": 0
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "actualModel",
+                            "promptTokens",
+                            "completionTokens",
+                            "applicationCredits"
+                          ],
+                          "additionalProperties": false
                         }
                       ]
                     }
@@ -5761,7 +6343,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -5812,7 +6395,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -6172,6 +6756,150 @@
                             "attachmentId"
                           ],
                           "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "thinking"
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            "durationMs": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "startedAt",
+                            "durationMs"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "reasoning"
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 32000
+                            },
+                            "format": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "summary"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "text",
+                            "format"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "citation"
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 4096,
+                              "format": "uri"
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 500
+                            },
+                            "startIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            },
+                            "endIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url",
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "usage"
+                            },
+                            "actualModel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "promptTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "completionTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "applicationCredits": {
+                              "type": "number",
+                              "const": 0
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "actualModel",
+                            "promptTokens",
+                            "completionTokens",
+                            "applicationCredits"
+                          ],
+                          "additionalProperties": false
                         }
                       ]
                     }
@@ -6442,7 +7170,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -6493,7 +7222,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -7098,6 +7828,150 @@
                         "attachmentId"
                       ],
                       "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "thinking"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "durationMs": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "startedAt",
+                        "durationMs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "reasoning"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 32000
+                        },
+                        "format": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "summary"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "text",
+                        "format"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "citation"
+                        },
+                        "url": {
+                          "type": "string",
+                          "maxLength": 4096,
+                          "format": "uri"
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "startIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        },
+                        "endIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "url",
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "usage"
+                        },
+                        "actualModel": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "promptTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "completionTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "applicationCredits": {
+                          "type": "number",
+                          "const": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "actualModel",
+                        "promptTokens",
+                        "completionTokens",
+                        "applicationCredits"
+                      ],
+                      "additionalProperties": false
                     }
                   ]
                 }
@@ -7368,7 +8242,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -7419,7 +8294,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -7779,6 +8655,150 @@
                         "attachmentId"
                       ],
                       "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "thinking"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "durationMs": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "startedAt",
+                        "durationMs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "reasoning"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 32000
+                        },
+                        "format": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "summary"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "text",
+                        "format"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "citation"
+                        },
+                        "url": {
+                          "type": "string",
+                          "maxLength": 4096,
+                          "format": "uri"
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "startIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        },
+                        "endIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "url",
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "usage"
+                        },
+                        "actualModel": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "promptTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "completionTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "applicationCredits": {
+                          "type": "number",
+                          "const": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "actualModel",
+                        "promptTokens",
+                        "completionTokens",
+                        "applicationCredits"
+                      ],
+                      "additionalProperties": false
                     }
                   ]
                 }
@@ -8049,7 +9069,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -8100,7 +9121,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -8644,6 +9666,150 @@
                         "attachmentId"
                       ],
                       "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "thinking"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "durationMs": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "startedAt",
+                        "durationMs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "reasoning"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 32000
+                        },
+                        "format": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "summary"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "text",
+                        "format"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "citation"
+                        },
+                        "url": {
+                          "type": "string",
+                          "maxLength": 4096,
+                          "format": "uri"
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "startIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        },
+                        "endIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "url",
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "usage"
+                        },
+                        "actualModel": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "promptTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "completionTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "applicationCredits": {
+                          "type": "number",
+                          "const": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "actualModel",
+                        "promptTokens",
+                        "completionTokens",
+                        "applicationCredits"
+                      ],
+                      "additionalProperties": false
                     }
                   ]
                 }
@@ -8914,7 +10080,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -8965,7 +10132,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -9325,6 +10493,150 @@
                         "attachmentId"
                       ],
                       "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "thinking"
+                        },
+                        "startedAt": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                        },
+                        "durationMs": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "startedAt",
+                        "durationMs"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "reasoning"
+                        },
+                        "text": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 32000
+                        },
+                        "format": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "summary"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "text",
+                        "format"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "citation"
+                        },
+                        "url": {
+                          "type": "string",
+                          "maxLength": 4096,
+                          "format": "uri"
+                        },
+                        "title": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        },
+                        "startIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        },
+                        "endIndex": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 32000
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "url",
+                        "title"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "const": "usage"
+                        },
+                        "actualModel": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "promptTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "completionTokens": {
+                          "anyOf": [
+                            {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 9007199254740991
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "applicationCredits": {
+                          "type": "number",
+                          "const": 0
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "actualModel",
+                        "promptTokens",
+                        "completionTokens",
+                        "applicationCredits"
+                      ],
+                      "additionalProperties": false
                     }
                   ]
                 }
@@ -9595,7 +10907,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -9646,7 +10959,8 @@
                                         "type": "string",
                                         "enum": [
                                           "image",
-                                          "video"
+                                          "video",
+                                          "audio"
                                         ]
                                       },
                                       "url": {
@@ -10360,6 +11674,150 @@
                             "attachmentId"
                           ],
                           "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "thinking"
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            "durationMs": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "startedAt",
+                            "durationMs"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "reasoning"
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 32000
+                            },
+                            "format": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "summary"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "text",
+                            "format"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "citation"
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 4096,
+                              "format": "uri"
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 500
+                            },
+                            "startIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            },
+                            "endIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url",
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "usage"
+                            },
+                            "actualModel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "promptTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "completionTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "applicationCredits": {
+                              "type": "number",
+                              "const": 0
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "actualModel",
+                            "promptTokens",
+                            "completionTokens",
+                            "applicationCredits"
+                          ],
+                          "additionalProperties": false
                         }
                       ]
                     }
@@ -10630,7 +12088,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -10681,7 +12140,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -11041,6 +12501,150 @@
                             "attachmentId"
                           ],
                           "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "thinking"
+                            },
+                            "startedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                            },
+                            "durationMs": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "startedAt",
+                            "durationMs"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "reasoning"
+                            },
+                            "text": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 32000
+                            },
+                            "format": {
+                              "type": "string",
+                              "enum": [
+                                "text",
+                                "summary"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "text",
+                            "format"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "citation"
+                            },
+                            "url": {
+                              "type": "string",
+                              "maxLength": 4096,
+                              "format": "uri"
+                            },
+                            "title": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 500
+                            },
+                            "startIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            },
+                            "endIndex": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 32000
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "url",
+                            "title"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string",
+                              "const": "usage"
+                            },
+                            "actualModel": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "promptTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "completionTokens": {
+                              "anyOf": [
+                                {
+                                  "type": "integer",
+                                  "minimum": 0,
+                                  "maximum": 9007199254740991
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "applicationCredits": {
+                              "type": "number",
+                              "const": 0
+                            }
+                          },
+                          "required": [
+                            "type",
+                            "actualModel",
+                            "promptTokens",
+                            "completionTokens",
+                            "applicationCredits"
+                          ],
+                          "additionalProperties": false
                         }
                       ]
                     }
@@ -11311,7 +12915,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {
@@ -11362,7 +12967,8 @@
                                             "type": "string",
                                             "enum": [
                                               "image",
-                                              "video"
+                                              "video",
+                                              "audio"
                                             ]
                                           },
                                           "url": {

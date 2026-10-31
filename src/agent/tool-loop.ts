@@ -2,7 +2,12 @@ import { MAX_AGENT_STEPS, MAX_TOOL_CALLS, MAX_INPUT_CORRECTIONS, ToolResultSchem
 import { ModelError, type ModelMessage, type ModelToolCall, type TextModel, type ModelUsage } from "./model";
 import { modelTools, type ToolRegistry } from "../tools/registry";
 
+import type { CitationBlock, ReasoningFormat } from "../contracts/content";
+
 export type LoopHooks = {
+  step?(): void | Promise<void>;
+  reasoning?(text: string, format: ReasoningFormat): void | Promise<void>;
+  citation?(value: CitationBlock): void | Promise<void>;
   text(delta: string): Promise<void>;
   usage(value: ModelUsage): void | Promise<void>;
   tools(calls: ModelToolCall[]): Promise<ToolResult[]>;
@@ -11,10 +16,13 @@ export async function runToolLoop(model: TextModel, messages: ModelMessage[], re
   let count = 0, corrections = 0;
   for (let step = 0; step < MAX_AGENT_STEPS; step++) {
     signal.throwIfAborted();
+    await hooks.step?.();
     let text = "", calls: ModelToolCall[] = [];
     for await (const event of model.stream(messages, signal, modelTools(registry))) {
       if (event.type === "usage") await hooks.usage(event.usage);
       else if (event.type === "text") { text += event.text; await hooks.text(event.text); }
+      else if (event.type === "reasoning") await hooks.reasoning?.(event.text, event.format);
+      else if (event.type === "citation") await hooks.citation?.(event.citation);
       else { if (calls.length) throw new ModelError("INVALID_TOOLS", "The tool response was invalid. Please try again."); calls = event.calls; }
     }
     if (!calls.length) return;

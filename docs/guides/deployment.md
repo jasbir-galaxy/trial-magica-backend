@@ -24,6 +24,8 @@ Connect the free Neon resource to backend **Production** only. Preview deploymen
 
 ## Release order
 
+For the rich-message release, follow the [reader-first exception](rich-messages-and-diagnostics.md#compatibility-and-rollback): frontend first, then backend API, then the Trigger worker. The new JSON variants require the compatible reader to remain installed during rollback.
+
 1. Run `pnpm deploy:check .env.release.local`. This checks configuration only and never calls paid services. Run type checks, lint, unit tests, and the isolated local database integration suite.
 2. Export the release environment into the migration process, then run `pnpm db:deploy` and `pnpm db:check`. Prisma prefers `DIRECT_URL`, then `DATABASE_URL_UNPOOLED`, then `DATABASE_URL`. Application queries continue using pooled `DATABASE_URL`.
 3. Save production variables to Vercel and Trigger.dev. Preserve the same database, project reference, API origin, and webhook master across both. Do not import `.env.local` wholesale or copy Vercel CLI/OIDC tokens into either service.

@@ -89,3 +89,28 @@ it("does not expose tool calls from truncated or oversized argument streams", as
     expect(events.some(e => e.type === "tool_calls")).toBe(false);
   }
 });
+
+it("streams provider-visible reasoning and safe citations without exposing encrypted details or paid plugins", async () => {
+  const annotation = { type: "url_citation", url_citation: { url: "https://example.com/source", title: "Source", start_index: 0, end_index: 6 } };
+  const event = (delta: unknown) => JSON.stringify({ model: "fixture/free", choices: [{ delta }] });
+  const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response([
+    event({ reasoning: "duplicate legacy field", reasoning_details: [{ type: "reasoning.summary", summary: "Checking the supplied facts." }, { type: "reasoning.encrypted", data: "opaque-private-data" }] }),
+    event({ content: "Answer", annotations: [annotation, { type: "url_citation", url_citation: { url: "javascript:alert(1)", title: "Unsafe" } }] }),
+    event({ annotations: [annotation] }), chunk("", "stop"), "[DONE]",
+  ], true));
+  const events = await collect(fetcher);
+  expect(events.filter(e => e.type !== "usage")).toEqual([
+    { type: "reasoning", text: "Checking the supplied facts.", format: "summary" },
+    { type: "text", text: "Answer" },
+    { type: "citation", citation: { type: "citation", url: "https://example.com/source", title: "Source", startIndex: 0, endIndex: 6 } },
+  ]);
+  expect(JSON.stringify(events)).not.toContain("opaque-private-data");
+  expect(JSON.parse(fetcher.mock.calls[0][1]!.body as string)).not.toHaveProperty("plugins");
+});
+
+it("accepts plaintext reasoning deltas and bounds accumulated reasoning independently of visible answer text", async () => {
+  const event = (reasoning: string) => JSON.stringify({ model: "fixture/free", choices: [{ delta: { reasoning } }] });
+  const events = await collect(vi.fn<typeof fetch>().mockResolvedValue(response([event("Checking "), event("details."), chunk("Answer", "stop"), "[DONE]"])));
+  expect(events.slice(0, 2)).toEqual([{ type: "reasoning", text: "Checking ", format: "text" }, { type: "reasoning", text: "details.", format: "text" }]);
+  await expect(collect(vi.fn<typeof fetch>().mockResolvedValue(response([event("a".repeat(16001)), event("b".repeat(16000)), chunk("Answer", "stop"), "[DONE]"])))).rejects.toThrow();
+});

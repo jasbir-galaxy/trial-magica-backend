@@ -1,3 +1,4 @@
+import { logEvent, runLogContext } from "../observability/log";
 import "server-only";
 import { auth, idempotencyKeys, tasks } from "@trigger.dev/sdk";
 import type { agentTurn } from "../../trigger/agent-turn";
@@ -11,13 +12,15 @@ export async function dispatchRun(runId: string) {
   // ambiguous network response is retried with the SAME global idempotency key.
   const claim = await db.agentRun.updateMany({ where: { id: runId, status: "queued", triggerRunId: null, dispatchAfter: { lte: new Date() } }, data: { dispatchAfter: new Date(Date.now() + 15_000) } });
   if (!claim.count) return;
+  const trace = runLogContext(await db.agentRun.findUniqueOrThrow({ where: { id: runId } }));
   try {
     const handle = await tasks.trigger<typeof agentTurn>(AGENT_TASK_ID, { runId }, {
       idempotencyKey: await idempotencyKeys.create(`agent-turn:${runId}`, { scope: "global" }), idempotencyKeyTTL: "30d", ttl: "3m",
     }, { retry: { maxAttempts: 1 } });
     await db.agentRun.update({ where: { id: runId }, data: { triggerRunId: handle.id } });
+    logEvent("info", "Turn dispatched", { ...trace, triggerRunId: handle.id, status: "queued" });
   } catch {
-    console.error("Turn dispatch deferred", { runId });
+    logEvent("error", "Turn dispatch deferred", trace);
     // Keep the saved message and queued run recoverable; never recreate either.
   }
 }

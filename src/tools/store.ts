@@ -1,3 +1,4 @@
+import { logEvent, runLogContext } from "../observability/log";
 import "server-only";
 import { recordWebhookEvent } from "../webhooks/store";
 import { PLAN_TOOL_NAME } from "../contracts/plans";
@@ -44,8 +45,8 @@ export async function registerInvocation(runId: string, callId: string, prepared
 }
 export async function settleInvocation(id: string, status: "completed" | "failed" | "cancelled" | "unknown", error: string | null, credits = 0, output?: ToolOutput) {
   if (output) ToolOutputSchema.parse(output);
-  const found = await getDatabase().toolInvocation.findUniqueOrThrow({ where: { id } });
-  return getDatabase().$transaction(async tx => {
+  const found = await getDatabase().toolInvocation.findUniqueOrThrow({ where: { id }, include: { run: true } });
+  const settled = await getDatabase().$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM "AgentRun" WHERE id = ${found.runId}::uuid FOR UPDATE`;
     await tx.$queryRaw`SELECT id FROM "ToolInvocation" WHERE id = ${id}::uuid FOR UPDATE`;
     const row = await tx.toolInvocation.findUniqueOrThrow({ where: { id } });
@@ -58,4 +59,6 @@ export async function settleInvocation(id: string, status: "completed" | "failed
     if (status === "completed") await recordWebhookEvent(tx, "tool.completed", await tx.agentRun.findUniqueOrThrow({ where: { id: row.runId } }), "completed", row.id);
     return saved;
   });
+  logEvent(settled.status === "failed" || settled.status === "unknown" ? "warn" : "info", "Tool settled", { ...runLogContext(found.run), invocationId: id, triggerRunId: settled.triggerRunId ?? undefined, providerRunId: settled.providerRunId ?? undefined, status: settled.status });
+  return settled;
 }
