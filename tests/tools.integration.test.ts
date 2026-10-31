@@ -122,7 +122,7 @@ it("persists ordered text/tool/text and assets through reload; later model failu
   } };
   await expect(executeTurn(run.id, `run_${randomUUID()}`, model, signal(), vi.fn(), vi.fn(), async ids => Promise.all(ids.map(id => executeMediaTool(id, "child", idleWait, signal(), provider()))), registry)).rejects.toThrow("timed out");
   const saved = await getOwnedRun(user, run.id);
-  expect(saved.status).toBe("failed"); expect(saved.assistantMessage.content.map(b => b.type)).toEqual(["text", "tool", "text"]);
+  expect(saved.status).toBe("failed"); expect(saved.assistantMessage.content.map(b => b.type)).toEqual(["thinking", "text", "tool", "thinking", "text"]);
   expect(saved.assistantMessage.tools?.[0]).toMatchObject({ status: "completed", credits: 5000 });
   const history = await listMessages(user, chat.id, { order: "desc", limit: 2 });
   expect(history.items[0].tools[0].output?.assets[0].url).toBe("https://example.com/cropped.png");
@@ -173,4 +173,15 @@ it("corrects invalid model arguments before admission and submits only the valid
   await executeTurn(run.id, `run_${randomUUID()}`, model, signal(), vi.fn(), vi.fn(), executor, registry);
   expect(client.start).toHaveBeenCalledTimes(1); expect(executor).toHaveBeenCalledTimes(1);
   expect((await getOwnedRun(user, run.id)).assistantMessage.tools).toHaveLength(1);
+});
+
+it("persists generated audio through the provider-neutral asset receipt and owned history", async () => {
+  const { run, chat } = await fixture();
+  const row = await registerInvocation(run.id, "audio-contract-fixture", crop);
+  // Contract fixture only: this does not claim Crop Image generates audio.
+  const output = { assets: [{ kind: "audio" as const, url: "https://example.com/generated.wav" }], credits: 0 };
+  const saved = toolResult(await settleInvocation(row.id, "completed", null, 0, output));
+  expect(saved).toMatchObject({ ok: true, output });
+  const history = await listMessages(user, chat.id, { order: "desc", limit: 2 });
+  expect(history.items[0].tools[0].output).toEqual(output);
 });

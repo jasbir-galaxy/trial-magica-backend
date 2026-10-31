@@ -1,3 +1,4 @@
+import { logEvent, runLogContext } from "../observability/log";
 import "server-only";
 import { PLAN_TOOL_NAME, PlanInputSchema, PLAN_APPROVAL_COPY } from "../contracts/plans";
 import { getDatabase } from "../db/client";
@@ -74,12 +75,14 @@ export async function decideApproval(clerkUserId: string, id: string, input: App
   });
 }
 export async function deliverApproval(id: string, complete: ApprovalDriver["complete"]) {
-  const row = await getDatabase().waitpoint.findUniqueOrThrow({ where: { id } });
+  const row = await getDatabase().waitpoint.findUniqueOrThrow({ where: { id }, include: { tool: { include: { run: true } } } });
+  const trace = { ...runLogContext(row.tool.run), invocationId: row.toolId, waitpointId: id, waitpointTokenId: row.tokenId ?? undefined };
   if (row.status === "pending" || !row.tokenId || row.deliveredAt) return;
   try {
     await complete(row.tokenId);
     await getDatabase().waitpoint.updateMany({ where: { id, status: row.status }, data: { deliveredAt: new Date() } });
-  } catch { console.warn("Approval wakeup deferred", { waitpointId: id }); }
+    logEvent("info", "Approval wakeup delivered", { ...trace, status: row.status });
+  } catch { logEvent("warn", "Approval wakeup deferred", trace); }
 }
 export async function awaitToolApproval(toolId: string, client: MagicaClient | undefined, driver: ApprovalDriver) {
   let row = await createApproval(toolId, client);
@@ -90,7 +93,10 @@ export async function awaitToolApproval(toolId: string, client: MagicaClient | u
     row = await getDatabase().waitpoint.findUniqueOrThrow({ where: { id: row.id } });
   }
   await deliverApproval(row.id, driver.complete);
-  if (row.status === "pending") await driver.wait(row.tokenId!);
+  if (row.status === "pending") {
+    logEvent("info", "Approval waiting", { waitpointId: row.id, waitpointTokenId: row.tokenId!, invocationId: toolId });
+    await driver.wait(row.tokenId!);
+  }
   // The authenticated DB decision is authoritative, not token output or model text.
   await expireApproval(row.id);
 }

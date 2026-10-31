@@ -2,12 +2,17 @@ import { z } from "zod";
 import { createParser } from "eventsource-parser";
 import { readOpenRouterEnvironment } from "../config/agent";
 import { MAX_TOOL_CALLS, MAX_TOOL_INPUT_BYTES } from "../contracts/tools";
-import { MAX_TEXT_LENGTH } from "../contracts/chats";
+import { MAX_TEXT_LENGTH, MAX_REASONING_LENGTH, MAX_CITATIONS, CitationBlockSchema } from "../contracts/content";
 import { ModelError, type ModelEvent, type TextModel } from "./model";
 
+const CitationAnnotationSchema = z.object({ type: z.literal("url_citation"), url_citation: z.object({ url: z.string(), title: z.string().optional(), start_index: z.number().optional(), end_index: z.number().optional() }) });
 const ChunkSchema = z.object({
   model: z.string().min(1).max(200).optional(), error: z.unknown().optional(),
-  choices: z.array(z.object({ delta: z.object({ content: z.string().nullable().optional(), tool_calls: z.array(z.object({ index: z.number().int().min(0).max(MAX_TOOL_CALLS - 1), id: z.string().max(200).optional(), type: z.literal("function").optional(), function: z.object({ name: z.string().max(100).optional(), arguments: z.string().max(MAX_TOOL_INPUT_BYTES).optional() }).optional() })).optional() }).optional(), finish_reason: z.string().nullable().optional() })).optional(),
+  choices: z.array(z.object({ delta: z.object({ content: z.string().nullable().optional(),
+      reasoning: z.string().max(MAX_REASONING_LENGTH).nullable().optional(),
+      reasoning_content: z.string().max(MAX_REASONING_LENGTH).nullable().optional(),
+      reasoning_details: z.array(z.object({ type: z.string(), text: z.string().max(MAX_REASONING_LENGTH).nullish(), summary: z.string().max(MAX_REASONING_LENGTH).nullish() })).max(64).nullish(),
+      annotations: z.array(z.unknown()).max(100).nullish(), tool_calls: z.array(z.object({ index: z.number().int().min(0).max(MAX_TOOL_CALLS - 1), id: z.string().max(200).optional(), type: z.literal("function").optional(), function: z.object({ name: z.string().max(100).optional(), arguments: z.string().max(MAX_TOOL_INPUT_BYTES).optional() }).optional() })).optional() }).optional(), finish_reason: z.string().nullable().optional() })).optional(),
   usage: z.object({ prompt_tokens: z.number().int().nonnegative(), completion_tokens: z.number().int().nonnegative() }).nullish(),
 });
 const invalid = () => new ModelError("INVALID_STREAM", "The reply was interrupted before it finished. Please try again.");
@@ -42,7 +47,8 @@ export function createOpenRouterModel(fetcher: typeof fetch = fetch): TextModel 
       const frames: string[] = [];
       const parser = createParser({ maxBufferSize: 256_000, onEvent: event => frames.push(event.data), onError: () => { throw invalid(); } });
       const decoder = new TextDecoder("utf-8", { fatal: true });
-      let done = false, finish: string | null = null, text = "";
+      let done = false, finish: string | null = null, text = "", reasoningLength = 0;
+      const citations = new Set<string>();
       const calls = new Map<number, { id: string; name: string; arguments: string }>();
       while (!done) {
         const chunk = await reader.read();
@@ -57,6 +63,20 @@ export function createOpenRouterModel(fetcher: typeof fetch = fetch): TextModel 
           if (value.model) actualModel = value.model;
           if (value.usage) usage = value.usage;
           for (const choice of value.choices ?? []) {
+            // Only provider-visible text/summary is exposed. Encrypted payloads,
+            // signatures and unknown provider fields never enter UI or storage.
+            const details = choice.delta?.reasoning_details;
+            const reasoning = details?.length ? details.flatMap<{ text: string; format: "summary" | "text" }>(detail => {
+              if (detail.type === "reasoning.summary" && detail.summary) return [{ text: detail.summary, format: "summary" as const }];
+              if (detail.type === "reasoning.text" && detail.text) return [{ text: detail.text, format: "text" as const }];
+              return [];
+            }) : [{ text: choice.delta?.reasoning ?? choice.delta?.reasoning_content ?? "", format: "text" as const }];
+            for (const part of reasoning) {
+              if (!part.text) continue;
+              reasoningLength += part.text.length;
+              if (reasoningLength > MAX_REASONING_LENGTH) throw new ModelError("LIMIT", "This reply reached its reasoning limit. Please try a shorter request.");
+              yield { type: "reasoning", ...part } satisfies ModelEvent;
+            }
             for (const delta of choice.delta?.tool_calls ?? []) {
               const call = calls.get(delta.index) ?? { id: "", name: "", arguments: "" };
               if (delta.id) { if (call.id && call.id !== delta.id) throw invalid(); call.id = delta.id; }
@@ -70,6 +90,17 @@ export function createOpenRouterModel(fetcher: typeof fetch = fetch): TextModel 
               if (text.length + delta.length > MAX_TEXT_LENGTH) throw new ModelError("LIMIT", "This reply reached the length limit. Ask a shorter follow-up to continue.");
               text += delta;
               yield { type: "text", text: delta } satisfies ModelEvent;
+            }
+            for (const raw of choice.delta?.annotations ?? []) {
+              const annotation = CitationAnnotationSchema.safeParse(raw);
+              if (!annotation.success) continue;
+              const source = annotation.data.url_citation;
+              const parsed = CitationBlockSchema.safeParse({ type: "citation", url: source.url, title: source.title || source.url, ...(source.start_index !== undefined ? { startIndex: source.start_index } : {}), ...(source.end_index !== undefined ? { endIndex: source.end_index } : {}) });
+              if (!parsed.success) continue;
+              const key = JSON.stringify(parsed.data);
+              if (!citations.has(key) && citations.size < MAX_CITATIONS) {
+                citations.add(key); yield { type: "citation", citation: parsed.data } satisfies ModelEvent;
+              }
             }
           }
         }

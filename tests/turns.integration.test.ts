@@ -90,7 +90,9 @@ it("persists final text, actual routed model, zero credits and usage, and reject
   await executeTurn(run.id, "run_fixture", model, new AbortController().signal, vi.fn(), vi.fn());
   expect(generate).toHaveBeenCalledTimes(1);
   const saved = await getOwnedRun(alice, run.id); expect(saved).toMatchObject({ status: "completed", actualModel: "fixture/free", promptTokens: 12, completionTokens: 4, applicationCredits: 0 });
-  expect(saved.assistantMessage.content).toEqual([{ type: "text", text: "Hello back" }]);
+  expect(saved.assistantMessage.content.map(block => block.type)).toEqual(["thinking", "text", "usage"]);
+  expect(saved.assistantMessage.content).toContainEqual({ type: "text", text: "Hello back" });
+  expect(saved.assistantMessage.content).toContainEqual({ type: "usage", actualModel: "fixture/free", promptTokens: 12, completionTokens: 4, applicationCredits: 0 });
   const first = await (await messages(req("GET", undefined, alice, "?order=desc&limit=1"), ctx(id))).json();
   expect(first.items[0].id).toBe(saved.assistantMessage.id);
   const older = await (await messages(req("GET", undefined, alice, `?order=desc&limit=1&cursor=${first.nextCursor}`), ctx(id))).json();
@@ -100,7 +102,7 @@ it("retains partial text on failure and settles cancellation once despite late c
   const id = await chat(), run = await createTurn(alice, id, input());
   const model: TextModel = { async *stream() { yield { type: "text", text: "Partial" }; throw new ModelError("TIMEOUT", "This reply timed out. Please try again."); } };
   await expect(executeTurn(run.id, "run_failed_fixture", model, new AbortController().signal, vi.fn(), vi.fn())).rejects.toThrow("timed out");
-  const failed = await getOwnedRun(alice, run.id); expect(failed.status).toBe("failed"); expect((failed.assistantMessage.content[0] as { text: string }).text).toBe("Partial"); expect(failed.assistantMessage.error).toContain("timed out");
+  const failed = await getOwnedRun(alice, run.id); expect(failed.status).toBe("failed"); expect(failed.assistantMessage.content).toContainEqual({ type: "text", text: "Partial" }); expect(failed.assistantMessage.error).toContain("timed out");
   const second = await createTurn(alice, id, input());
   await db.agentRun.update({ where: { id: second.id }, data: { status: "running", startedAt: new Date() } });
   await saveProgress(second.id, "Keep", 1); await stopRun(alice, second.id); await finishRun(second.id, "completed"); await finishRun(second.id, "failed");
@@ -120,4 +122,39 @@ it("requires a verified session before send, read, stop, or realtime access", as
   const request = new Request("http://localhost:3001/api/app/v1/chats", { method: "POST" });
   for (const response of await Promise.all([send(request, ctx(randomUUID())), read(request, ctx(randomUUID())), stop(request, runCtx(randomUUID())), token(request, runCtx(randomUUID()))])) expect(response.status).toBe(401);
   expect(mocks.trigger).not.toHaveBeenCalled(); expect(mocks.token).not.toHaveBeenCalled();
+});
+
+it("persists ordered reasoning and citations through a later model failure and owned history readback", async () => {
+  const id = await chat(), run = await createTurn(alice, id, input());
+  const frames: unknown[] = [];
+  const model: TextModel = { async *stream() {
+    yield { type: "reasoning", text: "Checked supplied evidence.", format: "summary" };
+    yield { type: "text", text: "Partial answer." };
+    yield { type: "citation", citation: { type: "citation", url: "https://example.com/source", title: "Source" } };
+    yield { type: "usage", usage: { actualModel: "fixture/free", promptTokens: 8, completionTokens: 5 } };
+    throw new ModelError("TIMEOUT", "The reply timed out.");
+  } };
+  await expect(executeTurn(run.id, "run_rich_failure", model, new AbortController().signal, frame => frames.push(frame), vi.fn(), undefined, new Map())).rejects.toThrow("timed out");
+  const saved = await getOwnedRun(alice, run.id);
+  expect(saved.assistantMessage.content.map(b => b.type)).toEqual(["thinking", "reasoning", "text", "citation", "usage"]);
+  expect(saved.assistantMessage.content[0]).toMatchObject({ durationMs: expect.any(Number) });
+  const readback = await (await messages(req("GET", undefined, alice, "?order=desc&limit=1"), ctx(id))).json();
+  expect(readback.items[0].content).toEqual(saved.assistantMessage.content);
+  expect(frames.at(-1)).toMatchObject({ text: "Partial answer.", content: saved.assistantMessage.content });
+  expect(saved).toMatchObject({ status: "failed", applicationCredits: 0, promptTokens: 8, completionTokens: 5 });
+});
+
+it("links the accepting HTTP trace to durable lifecycle logs and records terminal failure once", async () => {
+  const info = vi.spyOn(console, "info").mockImplementation(() => {});
+  const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const response = await send(req("POST", input("private prompt")), ctx(await chat()));
+    const { run } = await response.json();
+    const fields = { traceId: run.id, chatId: run.chatId, runId: run.id, messageId: run.assistantMessage.id, processId: String(process.pid) };
+    expect(info).toHaveBeenCalledWith("Turn dispatched", expect.objectContaining({ ...fields, requestTraceId: response.headers.get("X-Trace-Id"), triggerRunId: run.triggerRunId }));
+    await finishRun(run.id, "failed", "Safe error"); await finishRun(run.id, "failed", "Duplicate");
+    expect(errors).toHaveBeenCalledWith("Turn finished", expect.objectContaining({ ...fields, status: "failed" }));
+    expect(errors.mock.calls.filter(([event]) => event === "Turn finished")).toHaveLength(1);
+    expect(JSON.stringify([...info.mock.calls, ...errors.mock.calls])).not.toContain("private prompt");
+  } finally { info.mockRestore(); errors.mockRestore(); }
 });

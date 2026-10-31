@@ -1,3 +1,4 @@
+import { logEvent, runLogContext } from "../observability/log";
 import "server-only";
 import { recordWebhookEvent } from "../webhooks/store";
 import { ATTACHMENT_INCLUDE, attachmentDto } from "../uploads/attachments";
@@ -86,7 +87,7 @@ export async function saveProgress(runId: string, text: string | ReturnType<type
 
 export async function finishRun(runId: string, status: "completed" | "failed" | "cancelled", error: string | null = null,
   usage?: { actualModel: string; promptTokens: number | null; completionTokens: number | null }) {
-  return getDatabase().$transaction(async tx => {
+  const finished = await getDatabase().$transaction(async tx => {
     const locked = await tx.$queryRaw<{ status: string }[]>`SELECT status FROM "AgentRun" WHERE id = ${runId}::uuid FOR UPDATE`;
     if (!locked.length || !(ACTIVE as string[]).includes(locked[0].status)) return;
     const final = locked[0].status === "stopping" ? "cancelled" : status;
@@ -96,7 +97,9 @@ export async function finishRun(runId: string, status: "completed" | "failed" | 
     await closeUnsubmitted(tx, runId);
     await settleReservation(tx, `turn:${runId}`, 0);
     await recordWebhookEvent(tx, `agent.${final}`, run, final);
+    return run;
   });
+  if (finished) logEvent(finished.status === "failed" ? "error" : "info", "Turn finished", { ...runLogContext(finished), status: finished.status });
 }
 
 export async function stopRun(userId: string, runId: string) {
@@ -122,6 +125,9 @@ export async function contextForRun(runId: string) {
         const file = await attachmentDto(link.attachment);
         return JSON.stringify({ attachment: { name: file.name, mimeType: file.mimeType, url: file.url } });
       }
+      if (b.type === "citation") return JSON.stringify({ source: b.url, title: b.title });
+      // Activity, reasoning and usage are display/audit records, not new instructions.
+      if (b.type !== "tool") return "";
       const tool = row.tools.find(t => t.id === b.invocationId);
       const output = tool?.output ? ToolOutputSchema.parse(tool.output) : undefined;
       // Guidance is selected anew per turn. Never replay entire skill bodies or

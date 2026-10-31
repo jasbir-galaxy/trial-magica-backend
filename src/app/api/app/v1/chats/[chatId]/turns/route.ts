@@ -1,3 +1,4 @@
+import { logEvent } from "@/observability/log";
 import { ChatIdSchema, MAX_TEXT_LENGTH } from "@/contracts/chats";
 import { RunStateSchema, SendTurnSchema, SendTurnResultSchema } from "@/contracts/runs";
 import { createTurn, getOwnedRun, latestRun } from "@/agent/run-store";
@@ -20,7 +21,7 @@ export function POST(request: Request, context: Context) {
     const saved = await getOwnedRun(userId, run.id);
     // A realtime outage must not turn an accepted, persisted send into a failure.
     let realtime = null;
-    try { realtime = await realtimeForRun(userId, run.id); } catch { console.warn("Realtime token deferred", { runId: run.id }); }
+    try { realtime = await realtimeForRun(userId, run.id); } catch { logEvent("warn", "Realtime token deferred", { traceId: run.id, runId: run.id, chatId, messageId: run.assistantMessage.id }); }
     return Response.json(SendTurnResultSchema.parse({ run: saved, realtime }), { status: 202 });
   });
 }

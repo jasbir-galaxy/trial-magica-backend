@@ -13,13 +13,15 @@ export const ToolNameSchema = z.enum([...MediaToolNameSchema.options, "load_skil
 export type MediaToolName = z.infer<typeof MediaToolNameSchema>;
 export const ToolStatusSchema = z.enum(["pending", "awaiting_approval", "submitting", "running", "completed", "failed", "cancelled", "unknown"]);
 export const MediaUrlSchema = z.url().max(4096).refine(value => {
-  const u = new URL(value), h = u.hostname.toLowerCase();
-  return u.protocol === "https:" && !u.username && !u.password && !u.hash &&
-    h.includes(".") && !h.endsWith(".local") && !h.endsWith(".localhost") &&
-    !/^([0-9.]+|\[.*\])$/.test(h);
+  try {
+    const u = new URL(value), h = u.hostname.toLowerCase();
+    return u.protocol === "https:" && !u.username && !u.password && !u.hash &&
+      h.includes(".") && !h.endsWith(".local") && !h.endsWith(".localhost") &&
+      !/^([0-9.]+|\[.*\])$/.test(h);
+  } catch { return false; }
 }, "Use a public HTTPS media URL without credentials.");
 export const AssetSchema = z.object({
-  kind: z.enum(["image", "video"]), url: MediaUrlSchema,
+  kind: z.enum(["image", "video", "audio"]), url: MediaUrlSchema,
   width: z.number().int().positive().optional(), height: z.number().int().positive().optional(),
 });
 export const MediaOutputSchema = z.strictObject({ assets: z.array(AssetSchema).min(1).max(100), credits: z.number().int().nonnegative().max(2_147_483_647) });

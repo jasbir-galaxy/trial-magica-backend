@@ -3,8 +3,10 @@ export const MAX_WEBHOOK_ENDPOINTS = 5;
 export const WEBHOOK_EVENTS = ["agent.started", "agent.completed", "agent.failed", "agent.cancelled", "tool.completed"] as const;
 export const WebhookEventTypeSchema = z.enum(WEBHOOK_EVENTS);
 export const WebhookUrlSchema = z.url().max(2048).refine(value => {
-  const u = new URL(value);
-  return u.protocol === "https:" && !u.username && !u.password && !u.hash && (!u.port || u.port === "443") && /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(u.hostname) && !/\.(local|localhost|internal)$/i.test(u.hostname);
+  try {
+    const u = new URL(value);
+    return u.protocol === "https:" && !u.username && !u.password && !u.hash && (!u.port || u.port === "443") && /^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,}$/i.test(u.hostname) && !/\.(local|localhost|internal)$/i.test(u.hostname);
+  } catch { return false; }
 }, "Use a public HTTPS endpoint on port 443 without credentials or fragments.");
 export const CreateWebhookSchema = z.strictObject({ requestId: z.uuid(), url: WebhookUrlSchema, events: z.array(WebhookEventTypeSchema).min(1).max(WEBHOOK_EVENTS.length).refine(v => new Set(v).size === v.length) });
 export const WebhookEndpointSchema = z.object({ id: z.uuid(), url: WebhookUrlSchema, events: z.array(WebhookEventTypeSchema), createdAt: z.iso.datetime() });

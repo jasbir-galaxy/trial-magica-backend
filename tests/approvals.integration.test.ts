@@ -109,3 +109,19 @@ it("revalidates immutable input after the durable human wait", async () => {
   await expect(executeMediaTool(tool.id, "changed-input", async () => {}, new AbortController().signal, api, tamperingDriver)).rejects.toThrow("Saved tool schema failed validation");
   expect(api.start).not.toHaveBeenCalled();
 });
+
+it("correlates deferred approval delivery with its saved token, tool, message and run", async () => {
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    const { run, tool } = await fixture();
+    const approval = (await createApproval(tool.id, client()))!;
+    await db.waitpoint.update({ where: { id: approval.id }, data: { tokenId: "waitpoint-log-test" } });
+    await decideApproval(user, approval.id, { requestId: randomUUID(), inputHash: approval.inputHash, decision: "approved" });
+    await deliverApproval(approval.id, async () => { throw new Error("private-secret"); });
+    expect(warn).toHaveBeenCalledWith("Approval wakeup deferred", expect.objectContaining({
+      traceId: run.id, runId: run.id, chatId: run.chatId, messageId: run.assistantMessage.id,
+      invocationId: tool.id, waitpointId: approval.id, waitpointTokenId: "waitpoint-log-test", processId: String(process.pid),
+    }));
+    expect(JSON.stringify(warn.mock.calls)).not.toContain("private-secret");
+  } finally { warn.mockRestore(); }
+});

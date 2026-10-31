@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { MessageContentSchema } from "./content";
+export { ContentBlockSchema, MessageContentSchema, MAX_CONTENT_BLOCKS, MAX_TEXT_LENGTH } from "./content";
 import { AttachmentSchema, MAX_ATTACHMENTS } from "./uploads";
 import { ToolInvocationSchema, MAX_TOOL_CALLS } from "./tools";
 
@@ -8,8 +10,6 @@ export const MAX_CHAT_TITLE_LENGTH = 120;
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
 export const MAX_CURSOR_LENGTH = 512;
-export const MAX_CONTENT_BLOCKS = 100;
-export const MAX_TEXT_LENGTH = 32_000;
 export const MAX_CHAT_SEARCH_LENGTH = 120;
 export const CHAT_VIEWS = [{ value: "all", label: "All chats" }, { value: "favorites", label: "Favorites" }, { value: "trash", label: "Trash" }] as const;
 export const ChatViewSchema = z.enum(["all", "favorites", "trash"]);
@@ -41,12 +41,6 @@ export const ChatSchema = z.object({
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
-export const ContentBlockSchema = z.discriminatedUnion("type", [
-  z.strictObject({ type: z.literal("text"), text: z.string().min(1).max(MAX_TEXT_LENGTH) }),
-  z.strictObject({ type: z.literal("tool"), invocationId: z.uuid() }),
-  z.strictObject({ type: z.literal("attachment"), attachmentId: z.uuid() }),
-]);
-export const MessageContentSchema = z.array(ContentBlockSchema).max(MAX_CONTENT_BLOCKS);
 export const MessageSchema = z.object({
   id: z.uuid(),
   chatId: ChatIdSchema,

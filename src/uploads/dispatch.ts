@@ -1,3 +1,4 @@
+import { logEvent } from "../observability/log";
 import "server-only";
 import { tasks } from "@trigger.dev/sdk";
 import { getDatabase } from "../db/client";
@@ -9,7 +10,7 @@ export async function dispatchUpload(uploadId: string) {
     await tasks.trigger(UPLOAD_TASK_ID, { uploadId }, { idempotencyKey: `upload:${uploadId}:${Math.floor(Date.now() / 30_000)}`, idempotencyKeyTTL: "1h" });
     return true;
   } catch {
-    console.warn("Upload dispatch pending recovery", { uploadId });
+    logEvent("warn", "Upload dispatch pending recovery", { uploadId });
     return false;
   }
 }

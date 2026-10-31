@@ -44,6 +44,10 @@ assets remain attached to persisted results. An outbox emits signed lifecycle
 webhooks with bounded retries. The public REST API and Mintlify OpenAPI document
 derive from the same runtime schemas.
 
+Rich replies persist measured activity, provider reasoning, citations and model usage.
+See [rich messages and diagnostics](docs/guides/rich-messages-and-diagnostics.md)
+for limits, trace correlation, verification and reader-first deployment.
+
 ## Validation and remaining work
 
 Run `pnpm typecheck`, `pnpm lint`, `pnpm test`, `pnpm docs:check`, and `pnpm build`.
