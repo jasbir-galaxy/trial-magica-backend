@@ -7,6 +7,7 @@ import { HttpError } from "../http/errors";
 import { z } from "zod";
 import { getDatabase } from "../db/client";
 import { MediaToolNameSchema, ToolResultSchema } from "../contracts/tools";
+import { enrichImageMetadata } from "./image-metadata";
 import { hashJson, normalizeOutput } from "./registry";
 import { createMagicaClient, ToolServiceError, type MagicaClient } from "./magica-client";
 import { settleInvocation, toolResult } from "./store";
@@ -95,7 +96,7 @@ export async function executeMediaTool(invocationId: string, triggerRunId: strin
         const result = await client.read(row.providerRunId, signal);
         if (result.nodeType !== name) throw new ToolServiceError("INVALID_RESULT", "The saved media receipt does not match this tool.");
         if (result.status === "COMPLETED") {
-          try { return toolResult(await settleInvocation(row.id, "completed", null, result.creditUsed, normalizeOutput(name, result))); }
+          try { return toolResult(await settleInvocation(row.id, "completed", null, result.creditUsed, await enrichImageMetadata(normalizeOutput(name, result), signal))); }
           catch (error) { if (!(error instanceof z.ZodError)) throw error; return toolResult(await settleInvocation(row.id, "failed", "The tool finished but its output was invalid. Contact support with the saved receipt.", result.creditUsed)); }
         }
         if (result.status === "FAILED" || result.status === "CANCELED") return toolResult(await settleInvocation(row.id, result.status === "CANCELED" ? "cancelled" : "failed", result.status === "CANCELED" ? "The media task was cancelled." : "This media task failed. Check the source files and try again.", result.creditUsed));

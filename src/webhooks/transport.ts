@@ -1,19 +1,14 @@
-import { lookup } from "node:dns/promises";
 import { request } from "node:https";
-import { BlockList, isIPv4 } from "node:net";
+import { PublicTargetError, resolvePublicHost } from "../lib/public-network";
+export { isPublicAddress } from "../lib/public-network";
 import { WebhookUrlSchema } from "../contracts/webhooks";
-const denied = new BlockList();
-for (const [address, prefix] of [["0.0.0.0",8],["10.0.0.0",8],["100.64.0.0",10],["127.0.0.0",8],["169.254.0.0",16],["172.16.0.0",12],["192.0.0.0",24],["192.0.2.0",24],["192.88.99.0",24],["192.168.0.0",16],["198.18.0.0",15],["198.51.100.0",24],["203.0.113.0",24],["224.0.0.0",4],["240.0.0.0",4]] as const) denied.addSubnet(address, prefix, "ipv4");
 export class WebhookTargetError extends Error {}
-export const isPublicAddress = (address: string) => isIPv4(address) && !denied.check(address, "ipv4");
 export async function resolveWebhookTarget(value: string) {
   const parsed = WebhookUrlSchema.safeParse(value);
   if (!parsed.success) throw new WebhookTargetError("Use a public HTTPS destination.");
   const url = new URL(parsed.data);
-  let timer: ReturnType<typeof setTimeout>;
-  const addresses = await Promise.race([lookup(url.hostname, { all: true, family: 4 }), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("DNS timeout")), 3000); })]).finally(() => clearTimeout(timer));
-  if (!addresses.length || addresses.some(item => !isPublicAddress(item.address))) throw new WebhookTargetError("The destination does not resolve to an allowed public address.");
-  return { url, address: addresses[0].address };
+  try { return { url, address: await resolvePublicHost(url.hostname) }; }
+  catch (error) { if (error instanceof PublicTargetError) throw new WebhookTargetError(error.message); throw error; }
 }
 export type WebhookTransport = (url: string, body: string, headers: Record<string, string>) => Promise<number>;
 export const sendWebhook: WebhookTransport = async (value, body, headers) => {

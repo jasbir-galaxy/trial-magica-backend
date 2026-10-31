@@ -36,8 +36,9 @@ an uncertain creation must be resolved from the list before creating another.
 Run `pnpm docs:generate` after contract changes and `pnpm docs:check` to detect
 stale output. The specification is served at `/api/v1/openapi.json`. For a deployed
 backend, set `PUBLIC_API_BASE_URL` to its canonical HTTPS origin. The checked-in
-Mintlify specification targets local port 3001; update its server URL through
-the generator when preparing the hosted docs.
+Mintlify specification targets `https://trial-magica-backend.vercel.app`.
+The generator uses that documented origin by default; set `PUBLIC_API_BASE_URL`
+explicitly when exporting for another deployment or local port 3001.
 
 From `docs/site`, use `pnpm dlx mint@4.2.1178 validate`,
 `pnpm dlx mint@4.2.1178 broken-links`, and
@@ -50,8 +51,9 @@ Real public free-text and direct Crop Image runs, idempotent retries, and signed
 HTTPS deliveries through the background queue were exercised. Test keys and
 subscriptions were revoked or disabled afterward.
 
-Release work remains: apply migrations to the hosted PostgreSQL database; set
-the stable webhook master in both deployed processes; deploy tasks and both apps;
-connect and publish the Mintlify site; verify authenticated flows against the
-deployed URLs; and load-test the target concurrency within service quotas.
+The hosted database migrations, apps, and production worker have been deployed.
+See [hosted acceptance](hosted-acceptance.md) for real conversation and media
+evidence. The [Mintlify site](https://jasbir-magica-trial.mintlify.site) is published and
+claimed by the trial owner. Hosted signed success delivery is verified in the acceptance guide; concurrency
+measurement and the remaining failure-injection matrix still need evidence.
 The local checks do not establish 1,000-turn production capacity.

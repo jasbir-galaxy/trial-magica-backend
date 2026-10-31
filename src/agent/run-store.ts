@@ -1,3 +1,4 @@
+import { modelToolOutput } from "./tool-output";
 import { logEvent, runLogContext } from "../observability/log";
 import "server-only";
 import { recordWebhookEvent } from "../webhooks/store";
@@ -133,7 +134,7 @@ export async function contextForRun(runId: string) {
       // Guidance is selected anew per turn. Never replay entire skill bodies or
       // assets through ordinary chat history into every subsequent prompt.
       const guidance = GuidanceOutputSchema.safeParse(output);
-      return JSON.stringify(guidance.success ? { loadedSkill: guidance.data.skill.name, path: guidance.data.skill.path, versionHash: guidance.data.skill.versionHash } : output ?? { toolStatus: tool?.status });
+      return JSON.stringify(guidance.success ? { loadedSkill: guidance.data.skill.name, path: guidance.data.skill.path, versionHash: guidance.data.skill.versionHash } : output ? modelToolOutput(output) : { toolStatus: tool?.status });
     }))).join("\n");
     if (text.length > remaining) break;
     if (!text) continue;
