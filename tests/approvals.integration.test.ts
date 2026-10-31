@@ -10,6 +10,7 @@ import { createApproval, decideApproval, deliverApproval, expireApproval, type A
 import { accountForUser, reserve, settleReservation } from "../src/credits/store";
 import { ToolServiceError, type MagicaClient, type ProviderRun } from "../src/tools/magica-client";
 import catalog from "./fixtures/magica-catalog.json";
+vi.mock("../src/tools/image-metadata", () => ({ enrichImageMetadata: vi.fn(async (output: unknown) => output) }));
 vi.mock("server-only", () => ({}));
 const db = getDatabase(), user = `approval_test_${randomUUID()}`;
 const prepared = prepareTool(registryFromCatalog(catalog), "crop_image", { image_url: "https://example.com/source.png", crop: { x: 0, y: 0, width: 64, height: 64 } });

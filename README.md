@@ -6,6 +6,10 @@ separate Next.js application. This backend uses strict TypeScript, PostgreSQL an
 Prisma, Clerk, Trigger.dev, Zod, OpenRouter Free, the supplied Magica media APIs,
 and signed uploads to private S3-compatible storage.
 
+Live links: [Application](https://trial-magica-frontend.vercel.app) ·
+[API documentation](https://jasbir-magica-trial.mintlify.site) ·
+[Backend OpenAPI](https://trial-magica-backend.vercel.app/api/v1/openapi.json).
+
 ## Setup
 
 Use Node.js 24 and the pinned pnpm version. Copy `.env.example` to `.env.local`,
@@ -56,9 +60,10 @@ Run `pnpm test:db` only against the dedicated test database described in the
 recorded in the [media guide](docs/guides/media-tools.md); fixtures alone do not
 establish provider success.
 
-Before submission, repeat acceptance against the hosted deployment, publish the
-Mintlify site, and record the demo. The 1,000-concurrent-turn load target has not
-been measured. Longer-context compaction and stronger free-model intent fidelity
+The Mintlify site is published and claimed. Before submission, complete the
+remaining [hosted checks](docs/guides/hosted-acceptance.md), verify reviewer access,
+and record the [five-minute demo](docs/guides/submission.md). The
+1,000-concurrent-turn load target has not been measured. Longer-context compaction and stronger free-model intent fidelity
 remain improvements; 1,000-message UI virtualization has been exercised locally.
 Provider submissions with ambiguous receipts are preserved for reconciliation
 instead of being retried blindly and risking duplicate charges.

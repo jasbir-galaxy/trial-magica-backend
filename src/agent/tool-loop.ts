@@ -1,3 +1,4 @@
+import { modelToolOutput } from "./tool-output";
 import { MAX_AGENT_STEPS, MAX_TOOL_CALLS, MAX_INPUT_CORRECTIONS, ToolResultSchema, type ToolResult } from "../contracts/tools";
 import { ModelError, type ModelMessage, type ModelToolCall, type TextModel, type ModelUsage } from "./model";
 import { modelTools, type ToolRegistry } from "../tools/registry";
@@ -32,7 +33,10 @@ export async function runToolLoop(model: TextModel, messages: ModelMessage[], re
     const results = await hooks.tools(calls);
     if (results.length !== calls.length) throw new Error("Tool result count mismatch");
     messages.push({ role: "assistant", content: text, toolCalls: calls });
-    for (let i = 0; i < calls.length; i++) messages.push({ role: "tool", toolCallId: calls[i].id, content: JSON.stringify(ToolResultSchema.parse(results[i])) });
+    for (let i = 0; i < calls.length; i++) {
+      const result = ToolResultSchema.parse(results[i]);
+      messages.push({ role: "tool", toolCallId: calls[i].id, content: JSON.stringify(result.ok ? { ...result, output: modelToolOutput(result.output) } : result) });
+    }
     // Unresolved or failed work remains visible and retryable; never let a model
     // hide the failure with a success-sounding final message or a blind repost.
     const failure = results.find(r => !r.ok);
@@ -41,6 +45,8 @@ export async function runToolLoop(model: TextModel, messages: ModelMessage[], re
       // admission. Provider failures/unknown receipts must never be replayed.
       const inputOnly = results.every(r => !r.ok && r.code === "INVALID_INPUT" && !r.invocationId);
       if (inputOnly && corrections++ < MAX_INPUT_CORRECTIONS) continue;
+      // Schema details help the model repair arguments, but are not useful UI copy.
+      if (inputOnly) throw new ModelError("INVALID_INPUT", "The media settings could not be prepared. No tools were started for this step. Try again with the source files and desired settings; any earlier results are saved.");
       throw new ModelError(failure.code ?? "TOOL_FAILED", failure.error);
     }
   }

@@ -60,9 +60,36 @@ it("bounds input corrections and never treats an executed tool as an input-only 
   const stream = vi.fn(async function* () { yield { type: "tool_calls" as const, calls: [{ id: "call", name: "crop_image", arguments: "{}" }] }; });
   const invalid = { ok: false, code: "INVALID_INPUT", error: "Provide a complete crop rectangle.", retryable: true };
   const hooks = { text: vi.fn(), usage: vi.fn(), tools: vi.fn().mockResolvedValue([invalid]) };
-  await expect(runToolLoop({ stream }, [], registry, new AbortController().signal, hooks)).rejects.toThrow("complete crop rectangle");
+  await expect(runToolLoop({ stream }, [], registry, new AbortController().signal, hooks)).rejects.toThrow("No tools were started for this step");
   expect(hooks.tools).toHaveBeenCalledTimes(3);
   hooks.tools.mockClear().mockResolvedValue([{ ...invalid, invocationId: randomUUID() }]); stream.mockClear();
   await expect(runToolLoop({ stream }, [], registry, new AbortController().signal, hooks)).rejects.toThrow("complete crop rectangle");
   expect(hooks.tools).toHaveBeenCalledTimes(1);
+});
+
+it("gives the model display-ready M credits without exposing raw billing units", async () => {
+  let step = 0;
+  const output = { assets: [{ kind: "video" as const, url: "https://example.com/merged.mp4" }], credits: 12675 };
+  const model: TextModel = { async *stream(messages) {
+    if (step++ === 0) yield { type: "tool_calls", calls: [{ id: "merge", name: "merge_videos", arguments: "{}" }] };
+    else {
+      const result = JSON.parse(messages.at(-1)!.content);
+      expect(result.output.creditUsage).toBe("0.012675M credits");
+      expect(result.output).not.toHaveProperty("credits");
+      yield { type: "text", text: result.output.creditUsage };
+    }
+  } };
+  await runToolLoop(model, [], registry, new AbortController().signal, {
+    text: vi.fn(), usage: vi.fn(), tools: vi.fn().mockResolvedValue([{ ok: true, invocationId: randomUUID(), output }]),
+  });
+  expect(output.credits).toBe(12675);
+});
+
+it("keeps schema correction details out of the terminal user-facing error", async () => {
+  const model: TextModel = { async *stream() { yield { type: "tool_calls", calls: [{ id: "invalid", name: "gpt_image_2", arguments: "{}" }] }; } };
+  const error = await runToolLoop(model, [], registry, new AbortController().signal, {
+    text: vi.fn(), usage: vi.fn(), tools: vi.fn().mockResolvedValue([{ ok: false, code: "INVALID_INPUT", error: "GPT Image 2 inputs need correction: input (invalid_type). Follow the tool schema.", retryable: true }]),
+  }).catch((failure: Error) => failure);
+  expect(error).toBeInstanceOf(Error);
+  expect((error as Error).message).not.toMatch(/schema|invalid_type/);
 });

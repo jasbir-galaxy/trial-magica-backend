@@ -76,30 +76,53 @@ tool and turn totals. All five provider receipts were distinct. Total media
 usage for these acceptance conversations was 0.03925M credits. This is evidence
 for these runs, not a claim that every possible race has been load-tested.
 
+## Hosted signed webhooks — October 31
+
+A temporary synthetic API account exercised the deployed public REST API and
+production worker. Account/key/subscription setup used the backend service layer;
+chat creation, direct Crop Image submission, approval, and run reads used HTTPS
+at the hosted origin. This verifies delivery and execution, not the settings UI.
+
+- Chat: `010fcac4-a9bc-45b0-8144-7c7dcf247500`.
+- Run: `a4da335b-bf24-4e49-8711-317839301b57`.
+- Crop result: 64×64, settled once at 0.005M credits.
+- `agent.started`, `agent.completed`, and `tool.completed` each arrived once with
+  HTTP 204. All three raw-body HMAC signatures verified at the temporary receiver.
+- The endpoint was disabled, its API key revoked, and receiver records removed.
+  The first setup attempt hit a cold database transaction timeout before starting
+  any media work; the retry opened the connection before setup.
+
+This adds hosted success-path webhook evidence. Failure, retry, tampering,
+deduplication, and ownership remain covered by the automated suites; they were
+not all fault-injected against production.
+
 ## Remaining submission work
 
 - **Intent and output accuracy:** the first generation omitted the requested
   size and the assistant incorrectly described its dimensions. The explicit-size
   chain passed. Tighten model guidance and output verification before claiming
   consistent adherence to requested settings; do not silently regenerate media.
+  [The reliability release](agent-reliability.md) adds explicit model settings
+  and bounded image-header inspection; its hosted rollout is still pending.
 - **Credit and error copy:** the merged-video assistant prose used raw units
   while its tool card correctly displayed 0.012675M credits. The malformed-tool
   terminal message exposes schema terminology. Improve assistant-facing credit
   context and user-facing validation recovery without changing numeric billing
-  contracts or hiding the saved failure.
-- **Hosted breadth:** upload/reconnect/quota and signed outbound webhook delivery
-  still need hosted acceptance. Image editing has prior real local evidence;
+  contracts or hiding the saved failure. The reliability release implements
+  these boundaries and covers current and restored conversation context.
+- **Hosted breadth:** upload/reconnect/quota still need hosted acceptance.
+  Signed outbound success delivery is verified above. Image editing has prior real local evidence;
   it was not rerun against this deployment. File selection remains manual.
 - **Scale and context:** 1,000 concurrent agent turns are not measured. Existing
   UI virtualization evidence is not a worker load test. Long-history context
   remains bounded and needs the separately planned summary/retrieval work.
 - **Fidelity and accessibility:** finish comparison with Galaxy and broader
   browser/device coverage; the small Chromium suite does not establish full parity.
-- **Submission:** regenerate OpenAPI with the hosted API origin and publish the
-  Mintlify site, record the five-minute demo, and verify reviewer login access
-  and both repository URLs. The committed snapshot still targets localhost:
-  `pnpm docs:check` passes for that snapshot, while the explicit hosted-origin
-  check reports it as stale. Do not publish the current snapshot unchanged.
+- **Submission:** the [Mintlify site](https://jasbir-magica-trial.mintlify.site)
+  is published, claimed by the trial owner, and uses the hosted API origin.
+  Its interactive API reference and internal links have been verified. Record
+  the five-minute demo and verify reviewer login access using the
+  [submission checklist](submission.md).
 
 The deployment and primary media paths are verified. The complete work-trial
 brief is not yet satisfied; this guide must not be used as a blanket sign-off.

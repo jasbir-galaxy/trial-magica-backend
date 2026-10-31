@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { z } from "zod";
 import catalog from "./fixtures/magica-catalog.json";
-import { CropInput, MergeInput, registryFromCatalog, prepareTool, normalizeOutput, hashJson } from "../src/tools/registry";
+import { CropInput, MergeInput, registryFromCatalog, prepareTool, normalizeOutput, hashJson, modelTools } from "../src/tools/registry";
 const registry = registryFromCatalog(catalog);
 const image = "https://example.com/source.png";
 it("discovers all three tools and validates text/edit using the captured live catalog", () => {
@@ -36,4 +36,32 @@ it("normalizes assets and removes provider internals from tool results", () => {
   const run = { id: "provider-fixture", nodeType: "crop_image", status: "COMPLETED" as const, creditUsed: 5000, output: { image_url: image, provider: "private", secret: "private", width: 64, height: 64 } };
   expect(normalizeOutput("crop_image", run)).toEqual({ assets: [{ kind: "image", url: image, width: 64, height: 64 }], credits: 5000 });
   expect(() => normalizeOutput("merge_videos", run)).toThrow();
+});
+
+it("exposes the image argument envelope at the root for routed tool-calling models", () => {
+  const parameters = modelTools(registry).find(tool => tool.name === "gpt_image_2")!.parameters;
+  expect(parameters.required).toEqual(expect.arrayContaining(["subModelId", "input"]));
+  expect(parameters.properties).toHaveProperty("input");
+  expect(parameters.properties).toHaveProperty("subModelId");
+});
+
+it("requires the agent to select catalog-backed size and quality without tightening the public API", () => {
+  const args = { subModelId: "gpt-image-2-text", input: { prompt: "A green square" } };
+  expect(() => prepareTool(registry, "gpt_image_2", args)).not.toThrow();
+  expect(() => prepareTool(registry, "gpt_image_2", args, { forModel: true })).toThrow(/size|quality/);
+  const selected = { ...args, input: { ...args.input, size: "1024x1024", quality: "Low" } };
+  expect(prepareTool(registry, "gpt_image_2", selected, { forModel: true }).input).toMatchObject(selected.input);
+});
+
+it("exposes crop fields at the root while retaining complete rectangles and units", () => {
+  const parameters=modelTools(registry).find(tool=>tool.name==="crop_image")!.parameters;
+  expect(parameters.properties).toHaveProperty("image_url");
+  expect(parameters.properties).toHaveProperty("crop");
+  expect(parameters.properties).toHaveProperty("width_percent");
+  for(const coords of [{crop:{x:256,y:256,width:512,height:512}},{x_percent:25,y_percent:25,width_percent:50,height_percent:50}]) {
+    const prepared=prepareTool(registry,"crop_image",{image_url:image,...coords},{forModel:true});
+    expect(prepared.input).toMatchObject(coords);
+    expect(z.fromJSONSchema(prepared.inputSchema,{defaultTarget:"draft-7"}).safeParse(prepared.input).success).toBe(true);
+  }
+  expect(()=>prepareTool(registry,"crop_image",{image_url:image,x_percent:80,y_percent:0,width_percent:50,height_percent:50},{forModel:true})).toThrow();
 });

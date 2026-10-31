@@ -2,7 +2,7 @@ import { afterAll, afterEach, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { getDatabase } from "../src/db/client";
 import { createChat, listMessages } from "../src/chats/service";
-import { createTurn, getOwnedRun, stopRun } from "../src/agent/run-store";
+import { contextForRun, createTurn, finishRun, getOwnedRun, saveProgress, stopRun } from "../src/agent/run-store";
 import { executeTurn } from "../src/agent/execute-turn";
 import { registerInvocation, settleInvocation, toolResult } from "../src/tools/store";
 import { decideApproval, type ApprovalDriver } from "../src/approvals/store";
@@ -11,6 +11,7 @@ import { registryFromCatalog, prepareTool } from "../src/tools/registry";
 import { ToolServiceError, type MagicaClient, type ProviderRun } from "../src/tools/magica-client";
 import { ModelError, type TextModel } from "../src/agent/model";
 import catalog from "./fixtures/magica-catalog.json";
+vi.mock("../src/tools/image-metadata", () => ({ enrichImageMetadata: vi.fn(async (output: unknown) => output) }));
 vi.mock("server-only", () => ({}));
 const db = getDatabase(), user = `tools_test_${randomUUID()}`;
 const registry = registryFromCatalog(catalog);
@@ -184,4 +185,16 @@ it("persists generated audio through the provider-neutral asset receipt and owne
   expect(saved).toMatchObject({ ok: true, output });
   const history = await listMessages(user, chat.id, { order: "desc", limit: 2 });
   expect(history.items[0].tools[0].output).toEqual(output);
+});
+
+it("replays saved media dimensions and display credits without raw billing amounts", async () => {
+  const { run, chat } = await fixture(), row = await registerInvocation(run.id, "history", crop);
+  await settleInvocation(row.id, "completed", null, 12675, { assets: [{ kind: "image", url: image, width: 1254, height: 1254 }], credits: 12675 });
+  await saveProgress(run.id, [{ type: "tool", invocationId: row.id }], 1);
+  await finishRun(run.id, "completed");
+  const next = await createTurn(user, chat.id, { requestId: randomUUID(), text: "Crop the saved image", model: "openrouter/free" });
+  const context = JSON.stringify(await contextForRun(next.id));
+  expect(context).toContain("0.012675M credits"); expect(context).toContain("1254");
+  expect(context).not.toContain('\\"credits\\":12675');
+  expect((await getOwnedRun(user, run.id)).applicationCredits).toBe(12675);
 });
